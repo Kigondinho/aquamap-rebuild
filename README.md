@@ -8,8 +8,8 @@ forecast.
 **Stack:** Python 3.12, FastAPI, PostgreSQL/PostGIS, GeoPandas, Rasterio, NumPy, plain HTML/CSS/JS, Leaflet.
 
 > **Status: scaffold, database layer (Phase 3), data acquisition (Phase 4), DEM and slope (Phase 5) and database
-> ingestion of roads and rivers (Phase 6).** The scoring logic, the later pipeline steps, authentication and map data
-> loading are not implemented yet; those endpoints answer `501 Not Implemented`.
+> ingestion of roads and rivers (Phase 6) and the IVI scoring engine (Phase 7).** Authentication, the API queries and map
+> data loading are not implemented yet; those endpoints answer `501 Not Implemented`.
 > Design: [`docs/phase1_requirements_and_design.md`](docs/phase1_requirements_and_design.md) and
 > [`docs/phase3_database_design.md`](docs/phase3_database_design.md) (the latter amends the former).
 
@@ -116,10 +116,22 @@ python -m pipeline.load_vectors --verify-only
 ```
 
 Safe to re-run: rows are matched on `(osm_element, osm_id, part_no)`, so a second run inserts nothing. Details:
-[`docs/phase6_ingestion.md`](docs/phase6_ingestion.md). The later pipeline steps (`python -m pipeline.run_pipeline`)
-are still stubs.
+[`docs/phase6_ingestion.md`](docs/phase6_ingestion.md).
 
 If port 5433 is already in use on your machine, set another `POSTGRES_PORT` in `.env`.
+
+### Score the roads (Phase 7)
+
+```bash
+python -m app.db_tools init              # once, if the database was created before Phase 7
+python -m pipeline.score_roads           # measure, score and store every eligible road; verifies what it stored
+python -m pipeline.score_roads --verify-only
+```
+
+`IVI = 0.35·E + 0.20·S + 0.30·D + 0.15·M`, each factor scored 1–5 (5 = most vulnerable). The scoring rules are in
+`core/ivi.py` (pure, unit-tested). Thresholds, missing-data rules, metadata and limitations:
+[`docs/phase7_ivi_engine.md`](docs/phase7_ivi_engine.md). The index is a relative ranking, **not a flood probability**.
+The combined entry point `python -m pipeline.run_pipeline` is still a stub; run the steps one by one.
 
 ## Configuration
 
@@ -161,7 +173,8 @@ docs/         Design documents
 ## Conventions
 
 - Geometry is stored in EPSG:32737 (WGS 84 / UTM 37S, metres) and served to the browser as EPSG:4326.
-- Risk tiers: Low, Medium, High, Severe. IVI is on a 0–1 scale.
+- Risk tiers: Low, Medium, High, Severe. IVI and its four factor scores are on a 1–5 scale (5 = most vulnerable).
+- The IVI is a relative vulnerability index, not a flood probability or a measured flood risk.
 - SQL uses bound parameters only. Secrets never appear in source or the repository.
 - Scoring rules live in `core/` only; the frontend never recomputes tiers.
 
@@ -175,8 +188,8 @@ licence (`static/vendor/leaflet/LICENSE`).
 
 ## Roadmap
 
-1. Scoring engine (`core/ivi.py`) with unit tests.
-2. Data pipeline: fetch and validate (Phase 4), DEM/slope (Phase 5) and vector load (Phase 6) done; metrics, score, persist remain.
+1. Scoring engine (`core/ivi.py`) with unit tests: done (Phase 7).
+2. Data pipeline: fetch and validate (Phase 4), DEM/slope (Phase 5), vector load (Phase 6), metrics and scoring (Phase 7) done.
 3. Roads API and GeoJSON export.
 4. Authentication (registration, login, optional email 2FA).
 5. Map data loading, filters, popups and summary cards.

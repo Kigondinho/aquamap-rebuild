@@ -18,7 +18,7 @@ REQUIRED_FILES = [
     "pipeline/load_vectors.py", "pipeline/compute_metrics.py", "pipeline/score_roads.py",
     "pipeline/run_pipeline.py", "pipeline/errors.py", "pipeline/provenance.py", "pipeline/validate.py",
     "pipeline/process_vectors.py", "pipeline/acquire.py", "docs/phase4_data_acquisition.md", "docs/phase5_dem_terrain.md",
-    "pipeline/geometry.py", "docs/phase6_ingestion.md",
+    "pipeline/geometry.py", "docs/phase6_ingestion.md", "docs/phase7_ivi_engine.md",
     "app/__init__.py", "app/main.py", "app/settings.py", "app/db.py", "app/db_tools.py", "app/deps.py", "app/errors.py",
     "app/routers/__init__.py", "app/routers/auth.py", "app/routers/roads.py",
     "app/routers/admin.py", "app/routers/meta.py", "app/routers/health.py", "app/routers/pages.py",

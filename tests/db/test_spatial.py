@@ -116,7 +116,7 @@ def test_view_joins_roads_with_results(
     conn.execute(
         text(
             "INSERT INTO road_vulnerability (road_id, config_version, vulnerability_index, risk_category, river_dist_m) "
-            "VALUES (:r, :c, 0.812, 'Severe', 34)"
+            "VALUES (:r, :c, 4.812, 'Severe', 34)"
         ),
         {"r": scored, "c": cfg},
     )

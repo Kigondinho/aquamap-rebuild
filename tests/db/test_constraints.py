@@ -41,6 +41,7 @@ def test_invalid_layer_type_rejected(conn: Connection) -> None:
 
 
 def test_only_one_active_config(conn: Connection, insert_config: Callable[..., int]) -> None:
+    conn.execute(text("UPDATE scoring_config SET is_active = FALSE"))  # the database may already hold a real one
     insert_config(active=True)
     expect_db_error(
         conn,
@@ -108,7 +109,7 @@ INSERT_RESULT = (
 )
 
 
-def _result(road: int, cfg: int, ivi=0.5, tier="High", score=0.5, slope=3.0) -> dict:
+def _result(road: int, cfg: int, ivi=3.5, tier="High", score=3.0, slope=3.0) -> dict:
     return {"road": road, "cfg": cfg, "ivi": ivi, "tier": tier, "score": score, "slope": slope}
 
 
@@ -126,12 +127,13 @@ def test_valid_result_stored_and_linked(
 @pytest.mark.parametrize(
     "overrides",
     [
-        {"ivi": 1.5},  # IVI above 1
-        {"ivi": -0.1},  # IVI below 0
+        {"ivi": 5.001},  # IVI above 5
+        {"ivi": 0.999},  # IVI below 1
         {"tier": "Critical"},  # unknown tier name
         {"tier": None},  # IVI without tier
         {"ivi": None},  # tier without IVI
-        {"score": 2.0},  # factor score above 1
+        {"score": 5.5},  # factor score above 5
+        {"score": 0.5},  # factor score below 1
         {"slope": -1.0},  # negative slope
     ],
 )

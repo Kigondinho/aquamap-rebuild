@@ -15,10 +15,10 @@ def test_weights_cover_the_four_factors() -> None:
     assert set(d.DEFAULT_WEIGHTS) == {"elevation", "river", "slope", "surface"}
 
 
-def test_tier_thresholds_ascending_and_in_unit_range() -> None:
+def test_tier_thresholds_ascending_and_inside_the_scale() -> None:
     values = [d.DEFAULT_TIER_THRESHOLDS[name] for name in d.TIER_NAMES[1:]]
     assert values == sorted(values)
-    assert all(0.0 < v < 1.0 for v in values)
+    assert all(d.SCORE_MIN < v < d.SCORE_MAX for v in values)
 
 
 @pytest.mark.parametrize("factor", ["elevation", "river", "slope"])
@@ -27,13 +27,14 @@ def test_breakpoint_ladders_are_consistent(factor: str) -> None:
     edges, scores = spec["edges"], spec["scores"]
     assert list(edges) == sorted(edges)
     assert len(scores) == len(edges) + 1
-    assert all(0.0 <= s <= 1.0 for s in scores)
+    assert all(d.SCORE_MIN <= s <= d.SCORE_MAX for s in scores)
+    assert scores[0] == d.SCORE_MAX and scores[-1] == d.SCORE_MIN
     assert list(scores) == sorted(scores, reverse=True)  # lowest bucket is most vulnerable
 
 
-def test_surface_scores_in_unit_range() -> None:
+def test_surface_scores_inside_the_scale() -> None:
     for value in (d.SURFACE_SCORE_UNPAVED, d.SURFACE_SCORE_PAVED, d.SURFACE_SCORE_UNKNOWN):
-        assert 0.0 <= value <= 1.0
+        assert d.SCORE_MIN <= value <= d.SCORE_MAX
     assert d.SURFACE_SCORE_PAVED < d.SURFACE_SCORE_UNKNOWN < d.SURFACE_SCORE_UNPAVED
 
 

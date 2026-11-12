@@ -75,7 +75,7 @@ def insert_config(conn: Connection) -> Callable[..., int]:
             {
                 "w": json.dumps(defaults.DEFAULT_WEIGHTS),
                 "b": json.dumps(defaults.DEFAULT_BREAKPOINTS),
-                "s": json.dumps({"asphalt": defaults.SURFACE_SCORE_PAVED}),
+                "s": json.dumps({"asphalt": defaults.SURFACE_SCORE_PAVED, defaults.SURFACE_UNKNOWN_KEY: defaults.SURFACE_SCORE_UNKNOWN}),
                 "t": json.dumps(defaults.DEFAULT_TIER_THRESHOLDS),
                 "a": active,
             },

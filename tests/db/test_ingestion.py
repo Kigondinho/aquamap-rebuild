@@ -78,7 +78,7 @@ def test_changed_feature_is_updated_in_place(conn: Connection, insert_config: Ca
     config = insert_config()
     for road_id in before.values():
         conn.execute(text("INSERT INTO road_vulnerability (road_id, config_version, vulnerability_index, risk_category) "
-                          "VALUES (:r, :c, 0.5, 'High')"), {"r": road_id, "c": config})
+                          "VALUES (:r, :c, 3.5, 'High')"), {"r": road_id, "c": config})
     changed = roads()
     changed.loc[changed.osm_id == -2, "surface"] = "gravel"                              # attribute only
     changed.loc[changed.osm_id == -3, "geometry"] = LineString([(X, Y + 900), (X + 70, Y + 950)])  # geometry

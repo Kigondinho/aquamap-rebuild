@@ -28,12 +28,11 @@ def test_module_imports_cleanly(name: str) -> None:
     importlib.import_module(name)
 
 
-def test_steps_raise_not_implemented(tmp_path: Path) -> None:
-    from pipeline import compute_metrics
+def test_remaining_stub_is_the_combined_entry_point(tmp_path: Path) -> None:
+    # fetch (4), DEM (5), load (6), metrics and scoring (7) are implemented; see their own tests
+    from pipeline.run_pipeline import STEPS
 
-    # fetch_data (Phase 4), prepare_dem (Phase 5) and load_vectors (Phase 6) are implemented; see their own tests
-    with pytest.raises(NotImplementedError):
-        compute_metrics.add_length(None)  # type: ignore[arg-type]
+    assert len(STEPS) == 6
 
 
 def test_entry_point_exits_non_zero_and_changes_nothing() -> None:

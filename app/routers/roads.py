@@ -18,7 +18,7 @@ BBoxParam = Annotated[
 ]
 TierParam = Annotated[list[Tier] | None, Query(description="Repeat to select several tiers")]
 HighwayParam = Annotated[list[str] | None, Query(description="OSM highway classes")]
-MinIviParam = Annotated[float | None, Query(ge=0.0, le=1.0, description="Minimum IVI (0-1)")]
+MinIviParam = Annotated[float | None, Query(ge=1.0, le=5.0, description="Minimum IVI (1-5)")]
 
 
 @router.get("", response_model=GeoJSONFeatureCollection, summary="Roads in a map area")

@@ -134,7 +134,7 @@ CREATE TABLE IF NOT EXISTS road_vulnerability (
     elevation_m         REAL,
     slope_pct           REAL,
     river_dist_m        REAL,
-    -- normalised factor scores, 0..1 (higher = more vulnerable)
+    -- normalised factor scores, 1..5 (higher = more vulnerable)
     score_elevation     REAL,
     score_river         REAL,
     score_slope         REAL,
@@ -142,20 +142,20 @@ CREATE TABLE IF NOT EXISTS road_vulnerability (
     -- result
     vulnerability_index NUMERIC(4, 3),
     risk_category       VARCHAR(8),
-    -- zero or more of: no_dem, surface_missing, no_river
+    -- zero or more of: no_dem, no_slope, no_river, surface_missing, surface_unrecognised
     data_flags          TEXT[] NOT NULL DEFAULT '{}',
     computed_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
     CONSTRAINT vuln_inputs_nonneg CHECK (
         (slope_pct IS NULL OR slope_pct >= 0) AND (river_dist_m IS NULL OR river_dist_m >= 0)
     ),
     CONSTRAINT vuln_scores_in_range CHECK (
-        (score_elevation IS NULL OR score_elevation BETWEEN 0 AND 1) AND
-        (score_river     IS NULL OR score_river     BETWEEN 0 AND 1) AND
-        (score_slope     IS NULL OR score_slope     BETWEEN 0 AND 1) AND
-        (score_surface   IS NULL OR score_surface   BETWEEN 0 AND 1)
+        (score_elevation IS NULL OR score_elevation BETWEEN 1 AND 5) AND
+        (score_river     IS NULL OR score_river     BETWEEN 1 AND 5) AND
+        (score_slope     IS NULL OR score_slope     BETWEEN 1 AND 5) AND
+        (score_surface   IS NULL OR score_surface   BETWEEN 1 AND 5)
     ),
     CONSTRAINT vuln_ivi_in_range CHECK (
-        vulnerability_index IS NULL OR vulnerability_index BETWEEN 0 AND 1
+        vulnerability_index IS NULL OR vulnerability_index BETWEEN 1 AND 5
     ),
     CONSTRAINT vuln_tier_valid CHECK (
         risk_category IS NULL OR risk_category IN ('Low', 'Medium', 'High', 'Severe')
@@ -165,3 +165,28 @@ CREATE TABLE IF NOT EXISTS road_vulnerability (
         (vulnerability_index IS NULL) = (risk_category IS NULL)
     )
 );
+
+-- ---------------------------------------------------------------------------
+-- Phase 7 upgrade (idempotent): IVI and factor scores are on a 1..5 scale, and every result
+-- records the model version and how many terrain samples it rests on. The index is a relative
+-- vulnerability ranking, not a flood probability.
+-- Databases created earlier had 0..1 checks; they are replaced here. Results stored on the old
+-- scale would violate the new checks: delete them (TRUNCATE road_vulnerability) and re-score.
+-- ---------------------------------------------------------------------------
+ALTER TABLE road_vulnerability ADD COLUMN IF NOT EXISTS model_version   VARCHAR(32);
+ALTER TABLE road_vulnerability ADD COLUMN IF NOT EXISTS terrain_samples INTEGER;
+ALTER TABLE pipeline_runs      ADD COLUMN IF NOT EXISTS model_version   VARCHAR(32);
+
+ALTER TABLE road_vulnerability DROP CONSTRAINT IF EXISTS vuln_scores_in_range;
+ALTER TABLE road_vulnerability ADD CONSTRAINT vuln_scores_in_range CHECK (
+    (score_elevation IS NULL OR score_elevation BETWEEN 1 AND 5) AND
+    (score_river     IS NULL OR score_river     BETWEEN 1 AND 5) AND
+    (score_slope     IS NULL OR score_slope     BETWEEN 1 AND 5) AND
+    (score_surface   IS NULL OR score_surface   BETWEEN 1 AND 5)
+);
+ALTER TABLE road_vulnerability DROP CONSTRAINT IF EXISTS vuln_ivi_in_range;
+ALTER TABLE road_vulnerability ADD CONSTRAINT vuln_ivi_in_range CHECK (
+    vulnerability_index IS NULL OR vulnerability_index BETWEEN 1 AND 5
+);
+ALTER TABLE road_vulnerability DROP CONSTRAINT IF EXISTS vuln_samples_nonneg;
+ALTER TABLE road_vulnerability ADD CONSTRAINT vuln_samples_nonneg CHECK (terrain_samples IS NULL OR terrain_samples >= 0);
