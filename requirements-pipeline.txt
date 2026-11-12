@@ -1,0 +1,12 @@
+# Extra dependencies for the offline geospatial pipeline (pipeline/ and core/).
+# Install on top of requirements.txt:
+#   pip install -r requirements.txt -r requirements-pipeline.txt
+# Verified to install and import together on Python 3.13 (manylinux wheels bundle GDAL/GEOS/PROJ).
+geopandas==1.2.0
+rasterio==1.5.2
+numpy==2.5.4
+shapely==2.2.0
+pyproj==3.8.0
+geoalchemy2==0.21.0
+osmnx==2.1.1
+requests==2.34.2

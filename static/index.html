@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AquaMap — Nairobi road flood vulnerability</title>
+  <link rel="stylesheet" href="/static/vendor/leaflet/leaflet.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <span class="brand">AquaMap</span>
+      <nav aria-label="Main">
+        <a href="/" aria-current="page">Dashboard</a>
+        <a href="/admin">Layers &amp; parameters</a>
+      </nav>
+      <span id="user-menu" class="note"></span>
+    </header>
+
+    <section class="cards" aria-label="Summary">
+      <div class="card"><div class="label">Analysed road length</div><div class="value" id="stat-total">—</div></div>
+      <div class="card"><div class="label">High-tier length</div><div class="value" id="stat-high">—</div></div>
+      <div class="card"><div class="label">Severe-tier length</div><div class="value" id="stat-severe">—</div></div>
+    </section>
+
+    <main class="workspace">
+      <aside class="sidebar" aria-label="Filters">
+        <h2>Study zone</h2>
+        <div>Nairobi County</div>
+
+        <h2>Search</h2>
+        <div class="field"><input id="search" type="search" placeholder="Road name" disabled></div>
+
+        <h2>Risk tier</h2>
+        <label><input type="checkbox" name="tier" value="Low" checked> <span class="swatch low"></span> Low</label>
+        <label><input type="checkbox" name="tier" value="Medium" checked> <span class="swatch medium"></span> Medium</label>
+        <label><input type="checkbox" name="tier" value="High" checked> <span class="swatch high"></span> High</label>
+        <label><input type="checkbox" name="tier" value="Severe" checked> <span class="swatch severe"></span> Severe</label>
+
+        <h2>Road class</h2>
+        <div class="field"><select id="road-class" disabled><option>All classes</option></select></div>
+
+        <p class="note">Scores show relative susceptibility to surface flooding from terrain, river
+          proximity and road surface. They are a static planning aid, not a flood forecast.</p>
+      </aside>
+
+      <div id="map" role="application" aria-label="Road risk map"></div>
+    </main>
+  </div>
+
+  <script src="/static/vendor/leaflet/leaflet.js"></script>
+  <script type="module" src="/static/js/app.js"></script>
+</body>
+</html>

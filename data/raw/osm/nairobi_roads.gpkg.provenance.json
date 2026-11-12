@@ -1,0 +1,47 @@
+{
+  "attribution": "\u00a9 OpenStreetMap contributors (https://www.openstreetmap.org/copyright)",
+  "crs": "EPSG:4326",
+  "dataset": "roads",
+  "derived_from": [],
+  "feature_count": 52471,
+  "files": [
+    {
+      "bytes": 27144192,
+      "path": "osm/nairobi_roads.gpkg",
+      "sha256": "e6799d785086a14b4233e1b97b84af99645281f62a7d09e02e3ab68868b981f2"
+    }
+  ],
+  "licence": "Open Database Licence (ODbL) 1.0 - https://opendatacommons.org/licenses/odbl/1-0/",
+  "limitations": [
+    "OpenStreetMap is volunteer-mapped: completeness and tagging vary by area and change over time.",
+    "The 'surface' tag is present on only a minority of roads; missing values are not guessed.",
+    "The extract is a snapshot at the retrieval time recorded here; re-running gives newer data."
+  ],
+  "method": "osmnx.features_from_polygon",
+  "parameters": {
+    "area": "Nairobi County, Kenya",
+    "boundary_file": "nairobi_county_boundary.gpkg",
+    "non_line_features_not_saved": {
+      "Point": 1565,
+      "Polygon": 33
+    },
+    "tags": {
+      "highway": true
+    }
+  },
+  "processing_log": {},
+  "retrieved_at": "2026-11-12T22:10:07+00:00",
+  "source_name": "OpenStreetMap via the Overpass API (OSMnx features_from_polygon)",
+  "source_url": "https://overpass-api.de",
+  "stage": "raw",
+  "tools": {
+    "geopandas": "1.2.0",
+    "numpy": "2.5.4",
+    "osmnx": "2.1.1",
+    "pyproj": "3.8.0",
+    "python": "3.12.3",
+    "rasterio": "1.5.2",
+    "requests": "2.34.2",
+    "shapely": "2.2.0"
+  }
+}

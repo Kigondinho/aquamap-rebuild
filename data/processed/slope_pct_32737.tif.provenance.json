@@ -1,0 +1,48 @@
+{
+  "attribution": "SRTM terrain data courtesy of the U.S. Geological Survey",
+  "crs": "EPSG:32737",
+  "dataset": "slope_pct",
+  "derived_from": [
+    "nairobi_srtm_30m.tif"
+  ],
+  "feature_count": null,
+  "files": [
+    {
+      "bytes": 7008844,
+      "path": "processed/slope_pct_32737.tif",
+      "sha256": "39641a9bcba9c6d426f7cb90353ae843cb446e8c835a4fe164a940e499f3300c"
+    }
+  ],
+  "licence": "SRTM is a public-domain NASA/NGA dataset distributed by USGS; USGS requests credit when redistributed or published (tilezen/joerd docs/attribution.md).",
+  "limitations": [
+    "SRTM was acquired in February 2000: it predates later construction and land-use change.",
+    "It is a surface model (canopy and buildings included), not a bare-earth terrain model, with a vertical error of several metres; small drainage features are not resolved at 30 m.",
+    "Voids are flagged -32768 and are left as NODATA, never filled.",
+    "Elevations refer to the EGM96 geoid.",
+    "Slope is a 30 m neighbourhood estimate from SRTM; it smooths small embankments and cuttings and includes SRTM vertical noise.",
+    "Cells within one cell of nodata or of the raster edge have no slope (left as nodata, not extrapolated)."
+  ],
+  "method": "pipeline.prepare_dem",
+  "parameters": {
+    "nodata": -9999.0,
+    "output": "slope (%), Horn 3x3",
+    "resampling": "bilinear",
+    "resolution_m": 30.0,
+    "slope_method": "Horn 3x3, nodata-aware, percent"
+  },
+  "processing_log": {},
+  "retrieved_at": "2026-11-12T22:10:23+00:00",
+  "source_name": "SRTM 1 arc-second (SRTMGL1) via Mapzen/Tilezen terrain tiles, 'skadi' layout",
+  "source_url": "https://elevation-tiles-prod.s3.amazonaws.com/skadi/ (AWS Open Data bucket elevation-tiles-prod)",
+  "stage": "processed",
+  "tools": {
+    "geopandas": "1.2.0",
+    "numpy": "2.5.4",
+    "osmnx": "2.1.1",
+    "pyproj": "3.8.0",
+    "python": "3.12.3",
+    "rasterio": "1.5.2",
+    "requests": "2.34.2",
+    "shapely": "2.2.0"
+  }
+}

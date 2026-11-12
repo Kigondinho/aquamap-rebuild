@@ -1,0 +1,290 @@
+{
+  "generated_at": "2026-11-12T22:20:13+00:00",
+  "all_ok": true,
+  "reports": [
+    {
+      "dataset": "boundary",
+      "path": "data/raw/boundary/nairobi_county_boundary.gpkg",
+      "ok": true,
+      "stats": {
+        "area_km2": 695.9
+      },
+      "checks_run": [
+        "crs",
+        "geometry",
+        "area",
+        "location"
+      ],
+      "issues": []
+    },
+    {
+      "dataset": "roads (raw)",
+      "path": "data/raw/osm/nairobi_roads.gpkg",
+      "ok": true,
+      "stats": {
+        "feature_count": 52471,
+        "crs": "EPSG:4326",
+        "geometry_types": {
+          "LineString": 52471
+        },
+        "null_geometries": 0,
+        "empty_geometries": 0,
+        "invalid_geometries": 0,
+        "duplicate_ids": 0,
+        "duplicate_geometries": 0,
+        "highway_null": 0,
+        "highway_counts": {
+          "service": 22309,
+          "residential": 20669,
+          "path": 2202,
+          "secondary": 1664,
+          "footway": 1500,
+          "unclassified": 1167,
+          "track": 830,
+          "tertiary": 550,
+          "trunk": 343,
+          "primary": 298,
+          "secondary_link": 193,
+          "trunk_link": 148,
+          "living_street": 127,
+          "primary_link": 101,
+          "steps": 83
+        },
+        "name_missing_pct": 88.0,
+        "surface_missing_pct": 89.3,
+        "bounds_wgs84": [
+          36.65601,
+          -1.45245,
+          37.10233,
+          -1.15926
+        ],
+        "features_outside_boundary_2km": 0,
+        "grid_cells_1km": 695,
+        "grid_cells_with_road_pct": 99.0
+      },
+      "checks_run": [
+        "crs",
+        "geometry_types",
+        "empty_null_invalid",
+        "duplicates",
+        "attributes",
+        "coverage",
+        "completeness"
+      ],
+      "issues": [
+        {
+          "level": "info",
+          "check": "attributes",
+          "message": "'name' missing on 88.0% of records"
+        },
+        {
+          "level": "warning",
+          "check": "attributes",
+          "message": "'surface' missing on 89.3% of records (OSM tagging is incomplete; unknown surface falls back to a documented default in scoring)"
+        }
+      ]
+    },
+    {
+      "dataset": "rivers (raw)",
+      "path": "data/raw/rivers/nairobi_rivers.gpkg",
+      "ok": true,
+      "stats": {
+        "feature_count": 720,
+        "crs": "EPSG:4326",
+        "geometry_types": {
+          "LineString": 720
+        },
+        "null_geometries": 0,
+        "empty_geometries": 0,
+        "invalid_geometries": 0,
+        "duplicate_ids": 0,
+        "duplicate_geometries": 0,
+        "waterway_null": 0,
+        "waterway_counts": {
+          "stream": 359,
+          "drain": 258,
+          "river": 76,
+          "canal": 27
+        },
+        "name_missing_pct": 67.5,
+        "bounds_wgs84": [
+          36.66306,
+          -1.44503,
+          37.11923,
+          -1.15565
+        ],
+        "features_outside_boundary_2km": 0
+      },
+      "checks_run": [
+        "crs",
+        "geometry_types",
+        "empty_null_invalid",
+        "duplicates",
+        "attributes",
+        "coverage",
+        "completeness"
+      ],
+      "issues": [
+        {
+          "level": "info",
+          "check": "attributes",
+          "message": "'name' missing on 67.5% of records"
+        }
+      ]
+    },
+    {
+      "dataset": "roads (processed)",
+      "path": "data/processed/roads.gpkg",
+      "ok": true,
+      "stats": {
+        "feature_count": 52471,
+        "crs": "EPSG:32737",
+        "geometry_types": {
+          "LineString": 52471
+        },
+        "null_geometries": 0,
+        "empty_geometries": 0,
+        "invalid_geometries": 0,
+        "duplicate_ids": 0,
+        "duplicate_geometries": 0,
+        "highway_null": 0,
+        "highway_counts": {
+          "service": 22309,
+          "residential": 20669,
+          "path": 2202,
+          "secondary": 1664,
+          "footway": 1500,
+          "unclassified": 1167,
+          "track": 830,
+          "tertiary": 550,
+          "trunk": 343,
+          "primary": 298,
+          "secondary_link": 193,
+          "trunk_link": 148,
+          "living_street": 127,
+          "primary_link": 101,
+          "steps": 83
+        },
+        "name_missing_pct": 88.0,
+        "surface_missing_pct": 89.3,
+        "bounds_wgs84": [
+          36.65601,
+          -1.45245,
+          37.10233,
+          -1.15926
+        ],
+        "features_outside_boundary_2km": 0,
+        "grid_cells_1km": 695,
+        "grid_cells_with_road_pct": 99.0
+      },
+      "checks_run": [
+        "crs",
+        "geometry_types",
+        "empty_null_invalid",
+        "duplicates",
+        "attributes",
+        "coverage",
+        "completeness"
+      ],
+      "issues": [
+        {
+          "level": "info",
+          "check": "attributes",
+          "message": "'name' missing on 88.0% of records"
+        },
+        {
+          "level": "warning",
+          "check": "attributes",
+          "message": "'surface' missing on 89.3% of records (OSM tagging is incomplete; unknown surface falls back to a documented default in scoring)"
+        }
+      ]
+    },
+    {
+      "dataset": "rivers (processed)",
+      "path": "data/processed/rivers.gpkg",
+      "ok": true,
+      "stats": {
+        "feature_count": 720,
+        "crs": "EPSG:32737",
+        "geometry_types": {
+          "LineString": 720
+        },
+        "null_geometries": 0,
+        "empty_geometries": 0,
+        "invalid_geometries": 0,
+        "duplicate_ids": 0,
+        "duplicate_geometries": 0,
+        "waterway_null": 0,
+        "waterway_counts": {
+          "stream": 359,
+          "drain": 258,
+          "river": 76,
+          "canal": 27
+        },
+        "name_missing_pct": 67.5,
+        "bounds_wgs84": [
+          36.66306,
+          -1.44503,
+          37.11923,
+          -1.15565
+        ],
+        "features_outside_boundary_2km": 0
+      },
+      "checks_run": [
+        "crs",
+        "geometry_types",
+        "empty_null_invalid",
+        "duplicates",
+        "attributes",
+        "coverage",
+        "completeness"
+      ],
+      "issues": [
+        {
+          "level": "info",
+          "check": "attributes",
+          "message": "'name' missing on 67.5% of records"
+        }
+      ]
+    },
+    {
+      "dataset": "dem",
+      "path": "data/raw/dem/nairobi_srtm_30m.tif",
+      "ok": true,
+      "stats": {
+        "width": 1729,
+        "height": 1167,
+        "bands": 1,
+        "dtype": "int16",
+        "nodata": -32768.0,
+        "bounds": [
+          36.644583,
+          -1.464861,
+          37.124861,
+          -1.140694
+        ],
+        "crs": "EPSG:4326",
+        "resolution": [
+          0.0002777777777777778,
+          0.0002777777777777778
+        ],
+        "approx_cell_m": 30.9,
+        "void_pct": 0.0,
+        "min_m": 1432.0,
+        "max_m": 2324.0,
+        "mean_m": 1665.2,
+        "cells_inside_county": 732513,
+        "void_inside_county_pct": 0.0
+      },
+      "checks_run": [
+        "readable",
+        "crs",
+        "resolution",
+        "nodata",
+        "coverage",
+        "value_range"
+      ],
+      "issues": []
+    }
+  ]
+}

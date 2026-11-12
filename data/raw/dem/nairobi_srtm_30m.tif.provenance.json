@@ -1,0 +1,60 @@
+{
+  "attribution": "SRTM terrain data courtesy of the U.S. Geological Survey",
+  "crs": "EPSG:4326",
+  "dataset": "dem",
+  "derived_from": [],
+  "feature_count": null,
+  "files": [
+    {
+      "bytes": 12260395,
+      "path": "dem/tiles/S02E036.hgt.gz",
+      "sha256": "50f327da7c3a43a832ffa3a311d31c0d5fb70d49bfe114d04a8bb93aa887cff8"
+    },
+    {
+      "bytes": 11805047,
+      "path": "dem/tiles/S02E037.hgt.gz",
+      "sha256": "c479afab49a0033b0cfa63e67a0ebb8ae264f779577a46f78caf5ca027b10256"
+    },
+    {
+      "bytes": 1427639,
+      "path": "dem/nairobi_srtm_30m.tif",
+      "sha256": "3adf0f624591c55dc971eb494bebbc6fb0d71873b09f83bedbfec27e42a893fb"
+    }
+  ],
+  "licence": "SRTM is a public-domain NASA/NGA dataset distributed by USGS; USGS requests credit when redistributed or published (tilezen/joerd docs/attribution.md).",
+  "limitations": [
+    "SRTM was acquired in February 2000: it predates later construction and land-use change.",
+    "It is a surface model (canopy and buildings included), not a bare-earth terrain model, with a vertical error of several metres; small drainage features are not resolved at 30 m.",
+    "Voids are flagged -32768 and are left as NODATA, never filled.",
+    "Elevations refer to the EGM96 geoid."
+  ],
+  "method": "HTTP download of .hgt.gz tiles, merged and clipped with rasterio",
+  "parameters": {
+    "buffer_deg": 0.02,
+    "clip_bounds_wgs84": [
+      36.6447016,
+      -1.4648822,
+      37.1248735,
+      -1.1406749
+    ],
+    "tiles": [
+      "S02E036",
+      "S02E037"
+    ]
+  },
+  "processing_log": {},
+  "retrieved_at": "2026-11-12T22:09:44+00:00",
+  "source_name": "SRTM 1 arc-second (SRTMGL1) via Mapzen/Tilezen terrain tiles, 'skadi' layout",
+  "source_url": "https://elevation-tiles-prod.s3.amazonaws.com/skadi/ (AWS Open Data bucket elevation-tiles-prod)",
+  "stage": "raw",
+  "tools": {
+    "geopandas": "1.2.0",
+    "numpy": "2.5.4",
+    "osmnx": "2.1.1",
+    "pyproj": "3.8.0",
+    "python": "3.12.3",
+    "rasterio": "1.5.2",
+    "requests": "2.34.2",
+    "shapely": "2.2.0"
+  }
+}

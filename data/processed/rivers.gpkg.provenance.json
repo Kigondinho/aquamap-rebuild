@@ -1,0 +1,59 @@
+{
+  "attribution": "\u00a9 OpenStreetMap contributors (https://www.openstreetmap.org/copyright)",
+  "crs": "EPSG:32737",
+  "dataset": "rivers",
+  "derived_from": [
+    "nairobi_rivers.gpkg"
+  ],
+  "feature_count": 720,
+  "files": [
+    {
+      "bytes": 593920,
+      "path": "processed/rivers.gpkg",
+      "sha256": "d95c9904b679b9c8ed20bb642c35dfd2651c48429957c94b91218c4ecb6466b5"
+    }
+  ],
+  "licence": "Open Database Licence (ODbL) 1.0 - https://opendatacommons.org/licenses/odbl/1-0/",
+  "limitations": [
+    "OpenStreetMap is volunteer-mapped: completeness and tagging vary by area and change over time.",
+    "The 'surface' tag is present on only a minority of roads; missing values are not guessed.",
+    "The extract is a snapshot at the retrieval time recorded here; re-running gives newer data.",
+    "Waterway lines are mapped centrelines, not flood extents; seasonal and piped channels may be missing or mapped as 'drain'."
+  ],
+  "method": "pipeline.process_vectors",
+  "parameters": {
+    "kept_columns": [
+      "element",
+      "osm_id",
+      "name",
+      "waterway",
+      "geometry"
+    ]
+  },
+  "processing_log": {
+    "dropped_duplicate_ids": 0,
+    "dropped_non_line": 0,
+    "dropped_null_or_empty": 0,
+    "dropped_unrepairable": 0,
+    "dropped_zero_length_parts": 0,
+    "input_features": 720,
+    "invalid_found": 0,
+    "multilines_split_extra_parts": 0,
+    "output_features": 720,
+    "repaired_invalid": 0
+  },
+  "retrieved_at": "2026-11-12T22:20:08+00:00",
+  "source_name": "OpenStreetMap via the Overpass API (OSMnx features_from_polygon)",
+  "source_url": "https://overpass-api.de",
+  "stage": "processed",
+  "tools": {
+    "geopandas": "1.2.0",
+    "numpy": "2.5.4",
+    "osmnx": "2.1.1",
+    "pyproj": "3.8.0",
+    "python": "3.12.3",
+    "rasterio": "1.5.2",
+    "requests": "2.34.2",
+    "shapely": "2.2.0"
+  }
+}

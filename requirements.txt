@@ -1,0 +1,10 @@
+# Runtime dependencies for the web application (app/ and core/).
+# The geospatial pipeline has its own, heavier list: requirements-pipeline.txt
+fastapi==0.162.5
+uvicorn==0.54.0
+pydantic-settings==2.16.2
+email-validator==2.3.0
+SQLAlchemy==2.1.8
+psycopg[binary]==3.3.9
+argon2-cffi==25.1.0
+PyJWT==2.15.1

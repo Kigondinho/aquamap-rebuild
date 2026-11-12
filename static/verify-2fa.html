@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Verify your sign-in — AquaMap</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <main class="centered">
+    <form class="panel" id="verify-form" method="post" action="/api/v1/auth/verify-2fa" novalidate>
+      <h1>Enter your verification code</h1>
+      <p class="note">We emailed a 6-digit code. It expires in a few minutes.</p>
+      <div class="field"><label for="otp_code">Code</label>
+        <input id="otp_code" name="otp_code" inputmode="numeric" pattern="\d{6}" maxlength="6" autocomplete="one-time-code" required></div>
+      <p class="error" id="form-error" role="alert"></p>
+      <button type="submit">Verify</button>
+      <p class="note"><a href="/login">Back to sign in</a></p>
+    </form>
+  </main>
+  <script type="module" src="/static/js/auth.js"></script>
+</body>
+</html>

@@ -1,0 +1,52 @@
+{
+  "attribution": "\u00a9 OpenStreetMap contributors (https://www.openstreetmap.org/copyright)",
+  "crs": "EPSG:4326",
+  "dataset": "rivers",
+  "derived_from": [],
+  "feature_count": 720,
+  "files": [
+    {
+      "bytes": 618496,
+      "path": "rivers/nairobi_rivers.gpkg",
+      "sha256": "ee2cd890f0f94285353376a90efe070ec03d7a77fa9117512c094f804596ccb3"
+    }
+  ],
+  "licence": "Open Database Licence (ODbL) 1.0 - https://opendatacommons.org/licenses/odbl/1-0/",
+  "limitations": [
+    "OpenStreetMap is volunteer-mapped: completeness and tagging vary by area and change over time.",
+    "The 'surface' tag is present on only a minority of roads; missing values are not guessed.",
+    "The extract is a snapshot at the retrieval time recorded here; re-running gives newer data.",
+    "Waterway lines are mapped centrelines, not flood extents; seasonal and piped channels may be missing or mapped as 'drain'."
+  ],
+  "method": "osmnx.features_from_polygon",
+  "parameters": {
+    "area": "Nairobi County, Kenya",
+    "boundary_file": "nairobi_county_boundary.gpkg",
+    "non_line_features_not_saved": {
+      "Point": 1
+    },
+    "tags": {
+      "waterway": [
+        "river",
+        "stream",
+        "canal",
+        "drain"
+      ]
+    }
+  },
+  "processing_log": {},
+  "retrieved_at": "2026-11-12T22:09:31+00:00",
+  "source_name": "OpenStreetMap via the Overpass API (OSMnx features_from_polygon)",
+  "source_url": "https://overpass-api.de",
+  "stage": "raw",
+  "tools": {
+    "geopandas": "1.2.0",
+    "numpy": "2.5.4",
+    "osmnx": "2.1.1",
+    "pyproj": "3.8.0",
+    "python": "3.12.3",
+    "rasterio": "1.5.2",
+    "requests": "2.34.2",
+    "shapely": "2.2.0"
+  }
+}

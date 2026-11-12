@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign in — AquaMap</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <main class="centered">
+    <form class="panel" id="login-form" method="post" action="/api/v1/auth/login" novalidate>
+      <h1>Sign in to AquaMap</h1>
+      <div class="field"><label for="email">Email</label>
+        <input id="email" name="email" type="email" autocomplete="username" required></div>
+      <div class="field"><label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required></div>
+      <p class="error" id="form-error" role="alert"></p>
+      <button type="submit">Sign in</button>
+      <p class="note">No account? <a href="/register">Create one</a>.</p>
+    </form>
+  </main>
+  <script type="module" src="/static/js/auth.js"></script>
+</body>
+</html>

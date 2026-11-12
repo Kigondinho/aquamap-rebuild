@@ -1,0 +1,52 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Geospatial data (large, reproducible via the pipeline). Keep folder skeletons.
+data/raw/*/*
+!data/raw/*/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+# Provenance records and the validation report are small and document what data was used: commit them.
+!data/raw/*/*.provenance.json
+!data/processed/*.provenance.json
+!data/processed/validation_report.json
+# Download caches (OSMnx responses)
+data/cache/*
+!data/cache/.gitkeep
+*.tif
+*.tiff
+*.gpkg
+*.shp
+*.dbf
+*.shx
+*.prj
+*.cpg
+*.zip
+
+# Docker volumes / local database dumps
+pgdata/
+*.dump
+*.sql.gz
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Node (not used at runtime; guards against stray tooling)
+node_modules/

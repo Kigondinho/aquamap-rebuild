@@ -1,0 +1,61 @@
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    container_name: aquamap_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-aquamap_db}
+      POSTGRES_USER: ${POSTGRES_USER:-aquamap_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    ports:
+      # Bound to localhost only; the app container reaches the DB over the compose network.
+      - "127.0.0.1:${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Runs once, on first start of an empty volume (files execute in name order, as the
+      # POSTGRES_USER superuser, against POSTGRES_DB). To re-apply later without wiping data:
+      #   python -m app.db_tools init
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build:
+      context: .
+    container_name: aquamap_app
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # Inside the compose network the database is reachable as "db" on 5432.
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # Offline geospatial pipeline. Not started by `docker compose up`.
+  #   docker compose --profile pipeline run --rm pipeline
+  pipeline:
+    profiles: ["pipeline"]
+    build:
+      context: .
+      args:
+        INSTALL_PIPELINE: "true"
+    env_file: .env
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["python", "-m", "pipeline.run_pipeline"]
+
+volumes:
+  pgdata:
