@@ -8,8 +8,9 @@ forecast.
 **Stack:** Python 3.12, FastAPI, PostgreSQL/PostGIS, GeoPandas, Rasterio, NumPy, plain HTML/CSS/JS, Leaflet.
 
 > **Status: scaffold, database layer (Phase 3), data acquisition (Phase 4), DEM and slope (Phase 5) and database
-> ingestion of roads and rivers (Phase 6) the IVI scoring engine (Phase 7) and classification with road queries (Phase 8).** Authentication, export, the
-> admin endpoints and the map interface are not implemented yet; those endpoints answer `501 Not Implemented`.
+> ingestion of roads and rivers (Phase 6) the IVI scoring engine (Phase 7), classification with road queries (Phase 8) and the REST API with sign-in
+> (Phase 9).** The map interface, GeoJSON export, the email second factor and saving configurations from the browser are
+> not implemented yet; those endpoints answer `501 Not Implemented`.
 > Design: [`docs/phase1_requirements_and_design.md`](docs/phase1_requirements_and_design.md) and
 > [`docs/phase3_database_design.md`](docs/phase3_database_design.md) (the latter amends the former).
 
@@ -140,6 +141,19 @@ exists in Python (`core.ivi.assign_tier`) and in SQL (`ivi_tier`), and a trigger
 Road queries (map area, category, IVI range, road class, name search, radius, detail) are in
 `app/services/roads_query.py`. Details: [`docs/phase8_classification_and_queries.md`](docs/phase8_classification_and_queries.md).
 
+### REST API (Phase 9)
+
+```bash
+uvicorn app.main:app --reload                                   # http://localhost:8000/docs for the interactive API page
+python -m app.db_tools create-user --email you@example.com --name "Your Name" --admin   # the only way to make an administrator
+python -m app.openapi_export                                    # regenerate docs/openapi.json after changing the API
+```
+
+Register and sign in through `/api/v1/auth/register` and `/api/v1/auth/login`; the session is an HTTP-only cookie.
+Road, statistics and metadata routes need a session; `/admin` routes need an administrator. Lists are paginated
+(`limit`, `offset`, `pagination.total`), geometry is GeoJSON in EPSG:4326, and every error is `{"detail": "..."}`.
+Endpoint reference: [`docs/phase9_api.md`](docs/phase9_api.md); machine-readable: [`docs/openapi.json`](docs/openapi.json).
+
 ## Configuration
 
 All settings come from environment variables or `.env` (see `.env.example`). The app refuses to start
@@ -153,7 +167,7 @@ placeholder values are rejected and the interactive docs are disabled.
 | `POSTGRES_HOST` / `PORT` / `DB` / `USER` / `PASSWORD` | Database connection | `localhost` / `5433` / `aquamap_db` / `aquamap_user` / required |
 | `DB_POOL_SIZE`, `DB_MAX_OVERFLOW`, `DB_POOL_TIMEOUT`, `DB_POOL_RECYCLE`, `DB_CONNECT_TIMEOUT`, `DB_ECHO` | Connection pool and timeouts | `5`, `10`, `30`, `1800`, `3`, `false` |
 | `SESSION_COOKIE_NAME`, `SESSION_TTL_HOURS` | Session cookie | `aquamap_session`, `12` |
-| `ENABLE_2FA`, `OTP_*`, `SMTP_*` | Optional email second factor | off |
+| `ENABLE_2FA`, `OTP_*`, `SMTP_*` | Optional email second factor (not built: leave off) | off |
 | `DATA_DIR` | Raw and processed geodata | `data` |
 
 ## Project layout

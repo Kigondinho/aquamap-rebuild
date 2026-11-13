@@ -1,0 +1,2802 @@
+{
+  "components": {
+    "schemas": {
+      "AnalysisCoverage": {
+        "properties": {
+          "flags": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "description": "Number of analysed roads carrying each data flag",
+            "title": "Flags",
+            "type": "object"
+          },
+          "roads_analysed": {
+            "description": "Roads with a stored result (eligible classes)",
+            "title": "Roads Analysed",
+            "type": "integer"
+          },
+          "roads_not_analysed": {
+            "description": "Not eligible by road class, or loaded after the last run",
+            "title": "Roads Not Analysed",
+            "type": "integer"
+          },
+          "roads_total": {
+            "title": "Roads Total",
+            "type": "integer"
+          },
+          "roads_with_index": {
+            "title": "Roads With Index",
+            "type": "integer"
+          },
+          "roads_without_index": {
+            "description": "Analysed, but no terrain data, so no index",
+            "title": "Roads Without Index",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "roads_total",
+          "roads_analysed",
+          "roads_with_index",
+          "roads_without_index",
+          "roads_not_analysed",
+          "flags"
+        ],
+        "title": "AnalysisCoverage",
+        "type": "object"
+      },
+      "AnalysisMetadataResponse": {
+        "description": "What produced the stored vulnerability results, and how to read them.",
+        "properties": {
+          "analysed": {
+            "description": "False until the scoring pipeline has stored results",
+            "title": "Analysed",
+            "type": "boolean"
+          },
+          "analysis_date": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Analysis Date"
+          },
+          "attribution": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Attribution",
+            "type": "array"
+          },
+          "boundary_rule": {
+            "title": "Boundary Rule",
+            "type": "string"
+          },
+          "config_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Config Version"
+          },
+          "coverage": {
+            "$ref": "#/components/schemas/AnalysisCoverage"
+          },
+          "crs_api": {
+            "title": "Crs Api",
+            "type": "string"
+          },
+          "crs_storage": {
+            "title": "Crs Storage",
+            "type": "string"
+          },
+          "factors": {
+            "items": {
+              "$ref": "#/components/schemas/FactorDefinition"
+            },
+            "title": "Factors",
+            "type": "array"
+          },
+          "formula": {
+            "title": "Formula",
+            "type": "string"
+          },
+          "index_name": {
+            "title": "Index Name",
+            "type": "string"
+          },
+          "interpretation": {
+            "description": "What the index is not: read before using any score",
+            "title": "Interpretation",
+            "type": "string"
+          },
+          "last_run": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RunInfo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "layers": {
+            "items": {
+              "$ref": "#/components/schemas/LayerSummary"
+            },
+            "title": "Layers",
+            "type": "array"
+          },
+          "model_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Version"
+          },
+          "scale_max": {
+            "title": "Scale Max",
+            "type": "number"
+          },
+          "scale_min": {
+            "title": "Scale Min",
+            "type": "number"
+          },
+          "surface_scores": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "title": "Surface Scores",
+            "type": "object"
+          },
+          "tiers": {
+            "items": {
+              "$ref": "#/components/schemas/TierDefinition"
+            },
+            "title": "Tiers",
+            "type": "array"
+          }
+        },
+        "required": [
+          "analysed",
+          "index_name",
+          "formula",
+          "scale_min",
+          "scale_max",
+          "interpretation",
+          "factors",
+          "surface_scores",
+          "tiers",
+          "boundary_rule",
+          "coverage",
+          "layers",
+          "crs_storage",
+          "crs_api",
+          "attribution"
+        ],
+        "title": "AnalysisMetadataResponse",
+        "type": "object"
+      },
+      "CurrentUser": {
+        "properties": {
+          "email": {
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          },
+          "full_name": {
+            "title": "Full Name",
+            "type": "string"
+          },
+          "role": {
+            "enum": [
+              "admin",
+              "user"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "email",
+          "full_name",
+          "role"
+        ],
+        "title": "CurrentUser",
+        "type": "object"
+      },
+      "ErrorResponse": {
+        "description": "Body of every error response. ``errors`` is present only for validation failures (422).",
+        "properties": {
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "errors": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/FieldError"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Errors"
+          }
+        },
+        "required": [
+          "detail"
+        ],
+        "title": "ErrorResponse",
+        "type": "object"
+      },
+      "FactorDefinition": {
+        "description": "How one factor is measured, weighted and turned into a 1-5 class score.",
+        "properties": {
+          "factor": {
+            "title": "Factor",
+            "type": "string"
+          },
+          "measured_as": {
+            "title": "Measured As",
+            "type": "string"
+          },
+          "scores": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Class scores, one more than upper_bounds; first = lowest values",
+            "title": "Scores"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit"
+          },
+          "upper_bounds": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Ascending class boundaries; a value on a boundary belongs to the class above",
+            "title": "Upper Bounds"
+          },
+          "weight": {
+            "title": "Weight",
+            "type": "number"
+          }
+        },
+        "required": [
+          "factor",
+          "measured_as",
+          "weight"
+        ],
+        "title": "FactorDefinition",
+        "type": "object"
+      },
+      "FieldError": {
+        "properties": {
+          "field": {
+            "title": "Field",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "field",
+          "message"
+        ],
+        "title": "FieldError",
+        "type": "object"
+      },
+      "GeoJSONFeature": {
+        "properties": {
+          "geometry": {
+            "additionalProperties": true,
+            "title": "Geometry",
+            "type": "object"
+          },
+          "properties": {
+            "additionalProperties": true,
+            "title": "Properties",
+            "type": "object"
+          },
+          "type": {
+            "const": "Feature",
+            "default": "Feature",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "geometry",
+          "properties"
+        ],
+        "title": "GeoJSONFeature",
+        "type": "object"
+      },
+      "GeoJSONFeatureCollection": {
+        "properties": {
+          "features": {
+            "items": {
+              "$ref": "#/components/schemas/GeoJSONFeature"
+            },
+            "title": "Features",
+            "type": "array"
+          },
+          "number_returned": {
+            "default": 0,
+            "title": "Number Returned",
+            "type": "integer"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          },
+          "truncated": {
+            "default": false,
+            "title": "Truncated",
+            "type": "boolean"
+          },
+          "type": {
+            "const": "FeatureCollection",
+            "default": "FeatureCollection",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "features",
+          "pagination"
+        ],
+        "title": "GeoJSONFeatureCollection",
+        "type": "object"
+      },
+      "HealthResponse": {
+        "properties": {
+          "database": {
+            "title": "Database",
+            "type": "boolean"
+          },
+          "service": {
+            "title": "Service",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "degraded"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "service",
+          "version",
+          "database"
+        ],
+        "title": "HealthResponse",
+        "type": "object"
+      },
+      "LayerInfo": {
+        "properties": {
+          "feature_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feature Count"
+          },
+          "layer_id": {
+            "title": "Layer Id",
+            "type": "integer"
+          },
+          "layer_name": {
+            "title": "Layer Name",
+            "type": "string"
+          },
+          "layer_type": {
+            "enum": [
+              "roads",
+              "rivers",
+              "dem"
+            ],
+            "title": "Layer Type",
+            "type": "string"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          },
+          "uploaded_at": {
+            "format": "date-time",
+            "title": "Uploaded At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "layer_id",
+          "layer_name",
+          "layer_type",
+          "uploaded_at"
+        ],
+        "title": "LayerInfo",
+        "type": "object"
+      },
+      "LayerSummary": {
+        "properties": {
+          "feature_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feature Count"
+          },
+          "layer_name": {
+            "title": "Layer Name",
+            "type": "string"
+          },
+          "layer_type": {
+            "title": "Layer Type",
+            "type": "string"
+          },
+          "license": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "License"
+          },
+          "loaded_at": {
+            "format": "date-time",
+            "title": "Loaded At",
+            "type": "string"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          }
+        },
+        "required": [
+          "layer_name",
+          "layer_type",
+          "loaded_at"
+        ],
+        "title": "LayerSummary",
+        "type": "object"
+      },
+      "LoginRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "format": "email",
+            "maxLength": 254,
+            "title": "Email",
+            "type": "string"
+          },
+          "password": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "LoginRequest",
+        "type": "object"
+      },
+      "LoginResponse": {
+        "description": "On success the session is set as an HTTP-only cookie; the token itself is never in the body.",
+        "properties": {
+          "expires_in": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Seconds until the session expires",
+            "title": "Expires In"
+          },
+          "pending_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pending Token"
+          },
+          "requires_2fa": {
+            "title": "Requires 2Fa",
+            "type": "boolean"
+          },
+          "status": {
+            "enum": [
+              "authenticated",
+              "pending_2fa"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "user": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CurrentUser"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "status",
+          "requires_2fa"
+        ],
+        "title": "LoginResponse",
+        "type": "object"
+      },
+      "MessageResponse": {
+        "properties": {
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "title": "MessageResponse",
+        "type": "object"
+      },
+      "MetaConfigResponse": {
+        "description": "Single source of truth for the UI: tier cut-offs, labels and weights.",
+        "properties": {
+          "boundary_rule": {
+            "title": "Boundary Rule",
+            "type": "string"
+          },
+          "config_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Config Version"
+          },
+          "disclaimer": {
+            "title": "Disclaimer",
+            "type": "string"
+          },
+          "scale_max": {
+            "title": "Scale Max",
+            "type": "number"
+          },
+          "scale_min": {
+            "title": "Scale Min",
+            "type": "number"
+          },
+          "tiers": {
+            "items": {
+              "$ref": "#/components/schemas/TierDefinition"
+            },
+            "title": "Tiers",
+            "type": "array"
+          },
+          "weights": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "title": "Weights",
+            "type": "object"
+          }
+        },
+        "required": [
+          "tiers",
+          "boundary_rule",
+          "scale_min",
+          "scale_max",
+          "weights",
+          "disclaimer"
+        ],
+        "title": "MetaConfigResponse",
+        "type": "object"
+      },
+      "Pagination": {
+        "description": "Where this page sits in the full result. Ask for the next page with ``offset = next_offset``.",
+        "properties": {
+          "has_more": {
+            "title": "Has More",
+            "type": "boolean"
+          },
+          "limit": {
+            "description": "Largest number of items this request could return",
+            "title": "Limit",
+            "type": "integer"
+          },
+          "next_offset": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Offset of the next page; null on the last page",
+            "title": "Next Offset"
+          },
+          "offset": {
+            "description": "Number of items skipped before this page",
+            "title": "Offset",
+            "type": "integer"
+          },
+          "returned": {
+            "description": "Number of items in this page",
+            "title": "Returned",
+            "type": "integer"
+          },
+          "total": {
+            "description": "Number of items matching the request in all pages",
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "limit",
+          "offset",
+          "returned",
+          "total",
+          "has_more"
+        ],
+        "title": "Pagination",
+        "type": "object"
+      },
+      "PipelineStatus": {
+        "properties": {
+          "finished_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "segments_flagged": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Segments Flagged"
+          },
+          "segments_scored": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Segments Scored"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "status": {
+            "default": "idle",
+            "enum": [
+              "idle",
+              "running",
+              "succeeded",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "title": "PipelineStatus",
+        "type": "object"
+      },
+      "RegisterRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "confirm_password": {
+            "maxLength": 128,
+            "minLength": 8,
+            "title": "Confirm Password",
+            "type": "string"
+          },
+          "email": {
+            "format": "email",
+            "maxLength": 254,
+            "title": "Email",
+            "type": "string"
+          },
+          "full_name": {
+            "maxLength": 120,
+            "minLength": 2,
+            "title": "Full Name",
+            "type": "string"
+          },
+          "password": {
+            "maxLength": 128,
+            "minLength": 8,
+            "title": "Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "full_name",
+          "email",
+          "password",
+          "confirm_password"
+        ],
+        "title": "RegisterRequest",
+        "type": "object"
+      },
+      "RegisterResponse": {
+        "properties": {
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "user": {
+            "$ref": "#/components/schemas/CurrentUser"
+          }
+        },
+        "required": [
+          "message",
+          "user"
+        ],
+        "title": "RegisterResponse",
+        "type": "object"
+      },
+      "Resend2FARequest": {
+        "properties": {
+          "pending_token": {
+            "title": "Pending Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "pending_token"
+        ],
+        "title": "Resend2FARequest",
+        "type": "object"
+      },
+      "RoadStatsResponse": {
+        "properties": {
+          "by_tier": {
+            "items": {
+              "$ref": "#/components/schemas/TierLength"
+            },
+            "title": "By Tier",
+            "type": "array"
+          },
+          "total_length_km": {
+            "title": "Total Length Km",
+            "type": "number"
+          },
+          "total_segments": {
+            "default": 0,
+            "title": "Total Segments",
+            "type": "integer"
+          },
+          "unscored_length_km": {
+            "default": 0.0,
+            "title": "Unscored Length Km",
+            "type": "number"
+          },
+          "unscored_segments": {
+            "default": 0,
+            "title": "Unscored Segments",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total_length_km",
+          "by_tier"
+        ],
+        "title": "RoadStatsResponse",
+        "type": "object"
+      },
+      "RunInfo": {
+        "properties": {
+          "finished_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "integer"
+          },
+          "segments_flagged": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Segments Flagged"
+          },
+          "segments_scored": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Segments Scored"
+          },
+          "started_at": {
+            "format": "date-time",
+            "title": "Started At",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "status",
+          "started_at"
+        ],
+        "title": "RunInfo",
+        "type": "object"
+      },
+      "ScoringConfigModel": {
+        "description": "Body of ``PUT /admin/config`` and of the active-config response.",
+        "properties": {
+          "breakpoints": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              "type": "object"
+            },
+            "title": "Breakpoints",
+            "type": "object"
+          },
+          "config_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Config Version"
+          },
+          "surface_map": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "title": "Surface Map",
+            "type": "object"
+          },
+          "tier_thresholds": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "title": "Tier Thresholds",
+            "type": "object"
+          },
+          "weights": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "title": "Weights",
+            "type": "object"
+          }
+        },
+        "required": [
+          "weights",
+          "breakpoints",
+          "surface_map",
+          "tier_thresholds"
+        ],
+        "title": "ScoringConfigModel",
+        "type": "object"
+      },
+      "TierDefinition": {
+        "description": "``lower_bound <= IVI < upper_bound``; the top tier has no upper bound and includes the scale maximum.",
+        "properties": {
+          "lower_bound": {
+            "title": "Lower Bound",
+            "type": "number"
+          },
+          "plain_label": {
+            "title": "Plain Label",
+            "type": "string"
+          },
+          "tier": {
+            "title": "Tier",
+            "type": "string"
+          },
+          "upper_bound": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upper Bound"
+          }
+        },
+        "required": [
+          "tier",
+          "lower_bound",
+          "plain_label"
+        ],
+        "title": "TierDefinition",
+        "type": "object"
+      },
+      "TierLength": {
+        "properties": {
+          "length_km": {
+            "title": "Length Km",
+            "type": "number"
+          },
+          "segments": {
+            "default": 0,
+            "title": "Segments",
+            "type": "integer"
+          },
+          "tier": {
+            "enum": [
+              "Low",
+              "Medium",
+              "High",
+              "Severe"
+            ],
+            "title": "Tier",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tier",
+          "length_km"
+        ],
+        "title": "TierLength",
+        "type": "object"
+      },
+      "Verify2FARequest": {
+        "properties": {
+          "otp_code": {
+            "pattern": "^\\d{6}$",
+            "title": "Otp Code",
+            "type": "string"
+          },
+          "pending_token": {
+            "title": "Pending Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "pending_token",
+          "otp_code"
+        ],
+        "title": "Verify2FARequest",
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "SessionCookie": {
+        "description": "HTTP-only session cookie set by POST /api/v1/auth/login.",
+        "in": "cookie",
+        "name": "aquamap_session",
+        "type": "apiKey"
+      }
+    }
+  },
+  "info": {
+    "description": "Relative flood vulnerability of Nairobi County roads. Scores are a static planning aid derived from elevation, slope, river proximity and surface; they are not a flood forecast, a flood probability or a measured flood risk.\n\n**Access.** Sign in with `POST /api/v1/auth/login`; the session is an HTTP-only cookie. All road, statistics and metadata routes need a session; `/admin` routes need an administrator.\n\n**Geometry.** GeoJSON in EPSG:4326 (longitude, latitude).\n\n**Lists** are paginated with `limit` and `offset` and report `pagination.total`.\n\n**Errors** always have the body `{\"detail\": \"...\"}`; validation errors (422) add an `errors` list.",
+    "title": "AquaMap API",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/admin/config": {
+      "get": {
+        "operationId": "read_config_api_v1_admin_config_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScoringConfigModel"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not signed in, or the session expired"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Signed in, but not allowed"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Database unavailable"
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Active scoring configuration",
+        "tags": [
+          "Admin"
+        ]
+      },
+      "put": {
+        "operationId": "update_config_api_v1_admin_config_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScoringConfigModel"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScoringConfigModel"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not signed in, or the session expired"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Signed in, but not allowed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "A parameter or the body is invalid"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not implemented"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Database unavailable"
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Save a new scoring configuration version (not built)",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/layers": {
+      "get": {
+        "operationId": "layers_api_v1_admin_layers_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LayerInfo"
+                  },
+                  "title": "Response Layers Api V1 Admin Layers Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not signed in, or the session expired"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Signed in, but not allowed"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Database unavailable"
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Data layers and provenance",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/pipeline/status": {
+      "get": {
+        "operationId": "pipeline_status_api_v1_admin_pipeline_status_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PipelineStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not signed in, or the session expired"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Signed in, but not allowed"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Database unavailable"
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Last pipeline run",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/analysis/metadata": {
+      "get": {
+        "description": "Model version, configuration (weights, class boundaries, category ranges), analysis date, the run\nthat produced the results, how many roads were analysed, data flags, data sources and the statement\nof what the index is not.",
+        "operationId": "analysis_metadata_api_v1_analysis_metadata_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisMetadataResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not signed in, or the session expired"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Database unavailable"
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "How the stored results were produced",
+        "tags": [
+          "Analysis"
+        ]
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "description": "Checks the password and sets the session as an HTTP-only cookie. After 5 failed attempts for the same\nemail from the same address within 15 minutes, further attempts answer 429.",
+        "operationId": "login_api_v1_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not signed in, or the session expired"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "A parameter or the body is invalid"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too many attempts"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Database unavailable"
+          }
+        },
+        "summary": "Sign in",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "description": "Clears the session cookie. Safe to call when not signed in.",
+        "operationId": "logout_api_v1_auth_logout_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Sign out",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "operationId": "me_api_v1_auth_me_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentUser"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not signed in, or the session expired"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Database unavailable"
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "The signed-in user",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "description": "Creates a normal user account. It does not sign the user in. Administrators are created from the\ncommand line (`python -m app.db_tools create-user --admin`), never through this endpoint.",
+        "operationId": "register_api_v1_auth_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegisterResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict with existing data"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "A parameter or the body is invalid"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Database unavailable"
+          }
+        },
+        "summary": "Create an account",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/resend-2fa": {
+      "post": {
+        "operationId": "resend_2fa_api_v1_auth_resend_2fa_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Resend2FARequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "A parameter or the body is invalid"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not implemented"
+          }
+        },
+        "summary": "Resend a one-time code (optional module, not built)",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/verify-2fa": {
+      "post": {
+        "operationId": "verify_2fa_api_v1_auth_verify_2fa_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Verify2FARequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "A parameter or the body is invalid"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not implemented"
+          }
+        },
+        "summary": "Verify a one-time code (optional module, not built)",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/v1/health": {
+      "get": {
+        "description": "Always answers 200 so the process can be probed; ``degraded`` means the database is unreachable.",
+        "operationId": "health_api_v1_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Liveness and database check",
+        "tags": [
+          "Health"
+        ]
+      }
+    },
+    "/api/v1/meta/config": {
+      "get": {
+        "operationId": "meta_config_api_v1_meta_config_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetaConfigResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not signed in, or the session expired"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict with existing data"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Database unavailable"
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Category ranges and weights for the legend",
+        "tags": [
+          "Meta"
+        ]
+      }
+    },
+    "/api/v1/roads": {
+      "get": {
+        "description": "Road retrieval and filtering. Highest index first; at most 5,000 roads per page.",
+        "operationId": "list_roads_api_v1_roads_get",
+        "parameters": [
+          {
+            "description": "minLon,minLat,maxLon,maxLat in EPSG:4326",
+            "in": "query",
+            "name": "bbox",
+            "required": true,
+            "schema": {
+              "description": "minLon,minLat,maxLon,maxLat in EPSG:4326",
+              "examples": [
+                "36.78,-1.31,36.86,-1.26"
+              ],
+              "title": "Bbox",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Category; repeat to select several",
+            "in": "query",
+            "name": "tier",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "enum": [
+                      "Low",
+                      "Medium",
+                      "High",
+                      "Severe"
+                    ],
+                    "type": "string"
+                  },
+                  "maxItems": 4,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Category; repeat to select several",
+              "title": "Tier"
+            }
+          },
+          {
+            "description": "OSM highway class, e.g. primary; repeat to select several",
+            "in": "query",
+            "name": "highway",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "maxLength": 50,
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9_:\\-]+$",
+                    "type": "string"
+                  },
+                  "maxItems": 30,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "OSM highway class, e.g. primary; repeat to select several",
+              "title": "Highway"
+            }
+          },
+          {
+            "description": "Minimum IVI, inclusive (1-5)",
+            "in": "query",
+            "name": "min_ivi",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 5.0,
+                  "minimum": 1.0,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Minimum IVI, inclusive (1-5)",
+              "title": "Min Ivi"
+            }
+          },
+          {
+            "description": "Maximum IVI, inclusive (1-5)",
+            "in": "query",
+            "name": "max_ivi",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 5.0,
+                  "minimum": 1.0,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Maximum IVI, inclusive (1-5)",
+              "title": "Max Ivi"
+            }
+          },
+          {
+            "description": "Page size",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 1000,
+              "description": "Page size",
+              "maximum": 5000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Items to skip; use pagination.next_offset for the next page",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "description": "Items to skip; use pagination.next_offset for the next page",
+              "maximum": 1000000,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Map zoom; below 15 the geometry is simplified",
+            "in": "query",
+            "name": "zoom",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 22,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Map zoom; below 15 the geometry is simplified",
+              "title": "Zoom"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GeoJSONFeatureCollection"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not signed in, or the session expired"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "A parameter or the body is invalid"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Database unavailable"
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Roads in a map area",
+        "tags": [
+          "Roads"
+        ]
+      }
+    },
+    "/api/v1/roads/export": {
+      "get": {
+        "operationId": "export_roads_api_v1_roads_export_get",
+        "parameters": [
+          {
+            "description": "Optional minLon,minLat,maxLon,maxLat",
+            "in": "query",
+            "name": "bbox",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional minLon,minLat,maxLon,maxLat",
+              "title": "Bbox"
+            }
+          },
+          {
+            "description": "Category; repeat to select several",
+            "in": "query",
+            "name": "tier",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "enum": [
+                      "Low",
+                      "Medium",
+                      "High",
+                      "Severe"
+                    ],
+                    "type": "string"
+                  },
+                  "maxItems": 4,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Category; repeat to select several",
+              "title": "Tier"
+            }
+          },
+          {
+            "description": "OSM highway class, e.g. primary; repeat to select several",
+            "in": "query",
+            "name": "highway",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "maxLength": 50,
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9_:\\-]+$",
+                    "type": "string"
+                  },
+                  "maxItems": 30,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "OSM highway class, e.g. primary; repeat to select several",
+              "title": "Highway"
+            }
+          },
+          {
+            "description": "Minimum IVI, inclusive (1-5)",
+            "in": "query",
+            "name": "min_ivi",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 5.0,
+                  "minimum": 1.0,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Minimum IVI, inclusive (1-5)",
+              "title": "Min Ivi"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not signed in, or the session expired"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Result too large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "A parameter or the body is invalid"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not implemented"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Database unavailable"
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Download filtered roads as GeoJSON (not built)",
+        "tags": [
+          "Roads"
+        ]
+      }
+    },
+    "/api/v1/roads/nearby": {
+      "get": {
+        "description": "Roads with any part within `radius_m` metres of the point, nearest first, with `distance_m`.",
+        "operationId": "nearby_roads_api_v1_roads_nearby_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "lat",
+            "required": true,
+            "schema": {
+              "maximum": 90.0,
+              "minimum": -90.0,
+              "title": "Lat",
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "lon",
+            "required": true,
+            "schema": {
+              "maximum": 180.0,
+              "minimum": -180.0,
+              "title": "Lon",
+              "type": "number"
+            }
+          },
+          {
+            "description": "Radius in metres",
+            "in": "query",
+            "name": "radius_m",
+            "required": false,
+            "schema": {
+              "default": 500.0,
+              "description": "Radius in metres",
+              "exclusiveMinimum": 0.0,
+              "maximum": 2000.0,
+              "title": "Radius M",
+              "type": "number"
+            }
+          },
+          {
+            "description": "Page size",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "description": "Page size",
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Items to skip; use pagination.next_offset for the next page",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "description": "Items to skip; use pagination.next_offset for the next page",
+              "maximum": 1000000,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Category; repeat to select several",
+            "in": "query",
+            "name": "tier",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "enum": [
+                      "Low",
+                      "Medium",
+                      "High",
+                      "Severe"
+                    ],
+                    "type": "string"
+                  },
+                  "maxItems": 4,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Category; repeat to select several",
+              "title": "Tier"
+            }
+          },
+          {
+            "description": "OSM highway class, e.g. primary; repeat to select several",
+            "in": "query",
+            "name": "highway",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "maxLength": 50,
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9_:\\-]+$",
+                    "type": "string"
+                  },
+                  "maxItems": 30,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "OSM highway class, e.g. primary; repeat to select several",
+              "title": "Highway"
+            }
+          },
+          {
+            "description": "Minimum IVI, inclusive (1-5)",
+            "in": "query",
+            "name": "min_ivi",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 5.0,
+                  "minimum": 1.0,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Minimum IVI, inclusive (1-5)",
+              "title": "Min Ivi"
+            }
+          },
+          {
+            "description": "Maximum IVI, inclusive (1-5)",
+            "in": "query",
+            "name": "max_ivi",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 5.0,
+                  "minimum": 1.0,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Maximum IVI, inclusive (1-5)",
+              "title": "Max Ivi"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GeoJSONFeatureCollection"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not signed in, or the session expired"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "A parameter or the body is invalid"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Database unavailable"
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Roads near a point",
+        "tags": [
+          "Roads"
+        ]
+      }
+    },
+    "/api/v1/roads/search": {
+      "get": {
+        "description": "One result per road name: names starting with the text first, then names containing it.",
+        "operationId": "search_roads_api_v1_roads_search_get",
+        "parameters": [
+          {
+            "description": "Part of a road name, at least 2 characters",
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "description": "Part of a road name, at least 2 characters",
+              "maxLength": 100,
+              "minLength": 2,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Page size",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 10,
+              "description": "Page size",
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Items to skip; use pagination.next_offset for the next page",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "description": "Items to skip; use pagination.next_offset for the next page",
+              "maximum": 1000000,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GeoJSONFeatureCollection"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not signed in, or the session expired"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "A parameter or the body is invalid"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Database unavailable"
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Search roads by name",
+        "tags": [
+          "Roads"
+        ]
+      }
+    },
+    "/api/v1/roads/summary": {
+      "get": {
+        "operationId": "road_summary_api_v1_roads_summary_get",
+        "parameters": [
+          {
+            "description": "Optional minLon,minLat,maxLon,maxLat",
+            "in": "query",
+            "name": "bbox",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional minLon,minLat,maxLon,maxLat",
+              "title": "Bbox"
+            }
+          },
+          {
+            "description": "Category; repeat to select several",
+            "in": "query",
+            "name": "tier",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "enum": [
+                      "Low",
+                      "Medium",
+                      "High",
+                      "Severe"
+                    ],
+                    "type": "string"
+                  },
+                  "maxItems": 4,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Category; repeat to select several",
+              "title": "Tier"
+            }
+          },
+          {
+            "description": "OSM highway class, e.g. primary; repeat to select several",
+            "in": "query",
+            "name": "highway",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "maxLength": 50,
+                    "minLength": 1,
+                    "pattern": "^[A-Za-z0-9_:\\-]+$",
+                    "type": "string"
+                  },
+                  "maxItems": 30,
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "OSM highway class, e.g. primary; repeat to select several",
+              "title": "Highway"
+            }
+          },
+          {
+            "description": "Minimum IVI, inclusive (1-5)",
+            "in": "query",
+            "name": "min_ivi",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 5.0,
+                  "minimum": 1.0,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Minimum IVI, inclusive (1-5)",
+              "title": "Min Ivi"
+            }
+          },
+          {
+            "description": "Maximum IVI, inclusive (1-5)",
+            "in": "query",
+            "name": "max_ivi",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 5.0,
+                  "minimum": 1.0,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Maximum IVI, inclusive (1-5)",
+              "title": "Max Ivi"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoadStatsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not signed in, or the session expired"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "A parameter or the body is invalid"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Database unavailable"
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Vulnerability statistics: segments and length per category",
+        "tags": [
+          "Roads"
+        ]
+      }
+    },
+    "/api/v1/roads/{road_id}": {
+      "get": {
+        "operationId": "get_road_api_v1_roads__road_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "road_id",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "title": "Road Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GeoJSONFeature"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not signed in, or the session expired"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "A parameter or the body is invalid"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Database unavailable"
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "One road with full detail",
+        "tags": [
+          "Roads"
+        ]
+      }
+    }
+  },
+  "tags": [
+    {
+      "description": "Liveness and database check (public).",
+      "name": "Health"
+    },
+    {
+      "description": "Registration, sign-in, sign-out, current user.",
+      "name": "Authentication"
+    },
+    {
+      "description": "Road retrieval, filtering, search, nearby roads, detail and statistics.",
+      "name": "Roads"
+    },
+    {
+      "description": "Metadata of the stored vulnerability analysis.",
+      "name": "Analysis"
+    },
+    {
+      "description": "Category ranges and weights for the map legend.",
+      "name": "Meta"
+    },
+    {
+      "description": "Administrator-only reads.",
+      "name": "Admin"
+    }
+  ]
+}

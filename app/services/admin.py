@@ -1,11 +1,13 @@
-"""Admin operations: layer list, scoring configuration, pipeline status. Implemented in a later phase."""
+"""Admin reads (layers, active configuration, last run) and the public legend metadata.
+
+Saving a new configuration from the browser is not built yet (configurations are created by the pipeline)."""
 
 from __future__ import annotations
 
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from app.errors import ConflictError, NotImplementedYet
+from app.errors import ConflictError, NotFoundError, NotImplementedYet
 from app.schemas.admin import LayerInfo, PipelineStatus, ScoringConfigModel
 from app.schemas.meta import MetaConfigResponse, TierDefinition
 from core import ivi
@@ -18,11 +20,18 @@ TIER_BOUNDARY_RULE = (
 
 
 def list_layers(db: Session) -> list[LayerInfo]:
-    raise NotImplementedYet("layer listing")
+    """Loaded data layers with their provenance, newest first within each type."""
+    rows = db.execute(text("SELECT layer_id, layer_name, layer_type, source, feature_count, uploaded_at "
+                           "FROM spatial_layers ORDER BY layer_type, uploaded_at DESC, layer_id")).mappings()
+    return [LayerInfo(**row) for row in rows]
 
 
 def get_active_config(db: Session) -> ScoringConfigModel:
-    raise NotImplementedYet("reading the active scoring configuration")
+    row = db.execute(text("SELECT config_version, weights, breakpoints, surface_map, tier_thresholds "
+                          "FROM scoring_config WHERE is_active")).mappings().one_or_none()
+    if row is None:
+        raise NotFoundError("No scoring configuration is active yet; run the scoring pipeline first.")
+    return ScoringConfigModel(**row)
 
 
 def save_config(db: Session, config: ScoringConfigModel, created_by: str) -> ScoringConfigModel:
@@ -31,7 +40,10 @@ def save_config(db: Session, config: ScoringConfigModel, created_by: str) -> Sco
 
 
 def get_pipeline_status(db: Session) -> PipelineStatus:
-    raise NotImplementedYet("pipeline status")
+    """The most recent run, or ``idle`` with no run id if the pipeline has never run."""
+    row = db.execute(text("SELECT run_id, status, started_at, finished_at, segments_scored, segments_flagged "
+                          "FROM pipeline_runs ORDER BY run_id DESC LIMIT 1")).mappings().one_or_none()
+    return PipelineStatus(**row) if row is not None else PipelineStatus()
 
 
 def get_public_meta(db: Session) -> MetaConfigResponse:

@@ -4,6 +4,8 @@ Command line (run from the project root, with the same environment as the app):
 
     python -m app.db_tools init     # apply db/init/*.sql in order, in one transaction
     python -m app.db_tools check    # connectivity, PostGIS, tables, SRIDs, GiST indexes
+    python -m app.db_tools create-user --email you@example.com --name "Your Name" [--admin]
+                                    # asks for the password twice; the only way to create an administrator
 
 The init scripts are idempotent, so ``init`` is safe to run repeatedly and also works on a
 database that Docker has already initialised. Passwords are never printed.
@@ -139,10 +141,50 @@ def _print_diagnostics(d: Diagnostics) -> None:
             print(f"  - {issue}")
 
 
+def _create_user(email: str | None, name: str | None, admin: bool) -> int:
+    """Create an account from the terminal. The password is typed (hidden), never passed as an argument."""
+    import getpass
+
+    from pydantic import ValidationError
+    from sqlalchemy.orm import Session
+
+    from app.errors import ConflictError
+    from app.schemas.auth import RegisterRequest
+    from app.services.auth import register_user
+
+    if not email or not name:
+        print("create-user needs --email and --name", file=sys.stderr)
+        return 2
+    first = getpass.getpass("Password (at least 8 characters, with a letter and a digit): ")
+    second = getpass.getpass("Repeat password: ")
+    try:
+        payload = RegisterRequest(full_name=name, email=email, password=first, confirm_password=second)
+    except ValidationError as exc:
+        for item in exc.errors():
+            print(f"Invalid: {item['msg']}", file=sys.stderr)
+        return 2
+    try:
+        with Session(get_engine()) as db:
+            user = register_user(db, payload, role="admin" if admin else "user")
+    except ConflictError as exc:
+        print(exc.detail, file=sys.stderr)
+        return 1
+    except Exception as exc:  # report cleanly; never echo connection details
+        print(f"Database error ({exc.__class__.__name__}). Is the database running and configured in .env?", file=sys.stderr)
+        return 1
+    print(f"Created {user.role} account for {user.email}.")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m app.db_tools", description=__doc__.split("\n")[0])
-    parser.add_argument("command", choices=["init", "check"])
+    parser.add_argument("command", choices=["init", "check", "create-user"])
+    parser.add_argument("--email", help="create-user: email address")
+    parser.add_argument("--name", help="create-user: full name")
+    parser.add_argument("--admin", action="store_true", help="create-user: give the administrator role")
     args = parser.parse_args(argv)
+    if args.command == "create-user":
+        return _create_user(args.email, args.name, args.admin)
 
     try:
         if args.command == "init":

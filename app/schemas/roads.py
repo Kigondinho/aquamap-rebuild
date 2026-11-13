@@ -5,7 +5,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel
 
-from app.schemas.common import Tier
+from app.schemas.common import Pagination, Tier
 
 
 class RoadSummaryProperties(BaseModel):
@@ -57,8 +57,9 @@ class GeoJSONFeature(BaseModel):
 class GeoJSONFeatureCollection(BaseModel):
     type: Literal["FeatureCollection"] = "FeatureCollection"
     features: list[GeoJSONFeature]
-    number_returned: int = 0
-    truncated: bool = False                   # true: more roads matched than ``limit`` allowed
+    pagination: Pagination
+    number_returned: int = 0                  # same as pagination.returned
+    truncated: bool = False                   # same as pagination.has_more: more items match than this page holds
 
 
 class TierLength(BaseModel):

@@ -10,6 +10,9 @@ Rules that every query here follows:
   and distances are in metres. Geometry is only simplified when the caller passes ``zoom``.
 * Filter semantics: categories and road classes match any of the given values; ``min_ivi`` and
   ``max_ivi`` are both inclusive. Any filter on category or IVI leaves out roads without an index.
+* Every list is paginated with ``limit`` and ``offset`` over a fixed, repeatable order, and reports
+  the total number of matches, so a client can page through a large result without ever receiving it
+  in one response.
 """
 
 from __future__ import annotations
@@ -23,6 +26,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.errors import InvalidRequestError, NotFoundError
+from app.schemas.common import Pagination
 from app.schemas.roads import (
     FactorBreakdown,
     GeoJSONFeature,
@@ -140,11 +144,22 @@ def _summary_features(rows: Sequence[Any], extra: tuple[str, ...] = ()) -> list[
     return features
 
 
-def _collection(rows: Sequence[Any], limit: int, extra: tuple[str, ...] = ()) -> GeoJSONFeatureCollection:
-    """Build the response from ``limit + 1`` fetched rows, so truncation is reported, not hidden."""
-    truncated = len(rows) > limit
-    features = _summary_features(rows[:limit], extra)
-    return GeoJSONFeatureCollection(features=features, number_returned=len(features), truncated=truncated)
+def _check_page(limit: int, offset: int) -> None:
+    if limit < 1:
+        raise InvalidRequestError("limit must be at least 1.")
+    if offset < 0:
+        raise InvalidRequestError("offset must not be negative.")
+
+
+def _page(features: list[GeoJSONFeature], rows: Sequence[Any], limit: int, offset: int,
+          count_all: Any) -> GeoJSONFeatureCollection:
+    """Wrap one page. Each row carries ``total_count`` (a window count over all matches); a page beyond
+    the end has no rows, so the total is then counted with ``count_all()``."""
+    total = int(rows[0]._mapping["total_count"]) if rows else (int(count_all()) if offset > 0 else 0)
+    has_more = offset + len(features) < total
+    page = Pagination(limit=limit, offset=offset, returned=len(features), total=total, has_more=has_more,
+                      next_offset=offset + len(features) if has_more else None)
+    return GeoJSONFeatureCollection(features=features, pagination=page, number_returned=len(features), truncated=has_more)
 
 
 # ---------------------------------------------------------------------------- list: bounding box
@@ -154,26 +169,30 @@ def query_roads(
     tiers: Sequence[str] | None = None,
     highways: Sequence[str] | None = None,
     min_ivi: float | None = None,
-    limit: int = 5000,
+    limit: int = 1000,
     zoom: int | None = None,
     max_ivi: float | None = None,
+    offset: int = 0,
 ) -> GeoJSONFeatureCollection:
     """Roads intersecting ``bbox``, filtered, with light properties for drawing.
 
-    If more than ``limit`` roads match, the ``limit`` with the highest index are returned and
-    ``truncated`` is true.
+    Ordered by index, highest first, so the first page holds the most vulnerable roads of the area.
     """
+    _check_page(limit, offset)
     where, params = _filters(tiers, highways, min_ivi, max_ivi)
     tolerance = simplify_tolerance_m(zoom)
     # `&&` is the index-assisted bounding-box test; ST_Intersects then removes lines whose box overlaps
     # the envelope although the line itself does not.
     where = [f"r.geom && {_ENVELOPE_SQL}", f"ST_Intersects(r.geom, {_ENVELOPE_SQL})", *where]
-    params.update(minx=bbox.min_lon, miny=bbox.min_lat, maxx=bbox.max_lon, maxy=bbox.max_lat, limit=limit + 1)
+    params.update(minx=bbox.min_lon, miny=bbox.min_lat, maxx=bbox.max_lon, maxy=bbox.max_lat)
+    count_params = dict(params)
+    params.update(limit=limit, offset=offset)
     if tolerance > 0:
         params["tolerance"] = tolerance
-    rows = db.execute(text(f"SELECT {_SUMMARY_COLS}, {_geometry_sql(tolerance)} {_FROM} {_where(where)} "
-                           f"{_ORDER_BY_RISK} LIMIT :limit"), params).all()
-    return _collection(rows, limit)
+    rows = db.execute(text(f"SELECT {_SUMMARY_COLS}, {_geometry_sql(tolerance)}, count(*) OVER() AS total_count "
+                           f"{_FROM} {_where(where)} {_ORDER_BY_RISK} LIMIT :limit OFFSET :offset"), params).all()
+    return _page(_summary_features(rows), rows, limit, offset,
+                 lambda: db.execute(text(f"SELECT count(*) {_FROM} {_where(where)}"), count_params).scalar_one())
 
 
 # ---------------------------------------------------------------------------- list: radius
@@ -187,6 +206,7 @@ def nearby_roads(
     highways: Sequence[str] | None = None,
     min_ivi: float | None = None,
     max_ivi: float | None = None,
+    offset: int = 0,
 ) -> GeoJSONFeatureCollection:
     """Roads with any part within ``radius_m`` metres of a point, nearest first.
 
@@ -197,16 +217,21 @@ def nearby_roads(
         raise InvalidRequestError("lat and lon must be degrees in EPSG:4326.")
     if not (math.isfinite(radius_m) and 0 < radius_m <= MAX_RADIUS_M):
         raise InvalidRequestError(f"radius_m must be greater than 0 and at most {MAX_RADIUS_M:g}.")
+    _check_page(limit, offset)
     where, params = _filters(tiers, highways, min_ivi, max_ivi)
-    params.update(lon=lon, lat=lat, radius=radius_m, limit=limit + 1)
+    params.update(lon=lon, lat=lat, radius=radius_m)
+    count_params = dict(params)
+    params.update(limit=limit, offset=offset)
+    within = _where(["ST_DWithin(r.geom, p.geom, :radius)", *where])
+    point = f"WITH p AS (SELECT {_POINT_SQL} AS geom) "
     # The point is transformed once in a CTE; ST_DWithin uses the GiST index (it expands the point by
     # the radius and compares bounding boxes first).
     rows = db.execute(text(
-        f"WITH p AS (SELECT {_POINT_SQL} AS geom) "
-        f"SELECT {_SUMMARY_COLS}, ST_Distance(r.geom, p.geom) AS distance_m, {_geometry_sql(0.0)} "
-        f"{_FROM} CROSS JOIN p {_where(['ST_DWithin(r.geom, p.geom, :radius)', *where])} "
-        "ORDER BY ST_Distance(r.geom, p.geom), r.road_id LIMIT :limit"), params).all()
-    return _collection(rows, limit, extra=("distance_m",))
+        f"{point}SELECT {_SUMMARY_COLS}, ST_Distance(r.geom, p.geom) AS distance_m, {_geometry_sql(0.0)}, "
+        f"count(*) OVER() AS total_count {_FROM} CROSS JOIN p {within} "
+        "ORDER BY ST_Distance(r.geom, p.geom), r.road_id LIMIT :limit OFFSET :offset"), params).all()
+    return _page(_summary_features(rows, extra=("distance_m",)), rows, limit, offset,
+                 lambda: db.execute(text(f"{point}SELECT count(*) {_FROM} CROSS JOIN p {within}"), count_params).scalar_one())
 
 
 # ---------------------------------------------------------------------------- search by name
@@ -214,7 +239,7 @@ def _like_escape(value: str) -> str:
     return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
 
 
-def search_roads(db: Session, q: str, limit: int = 10) -> GeoJSONFeatureCollection:
+def search_roads(db: Session, q: str, limit: int = 10, offset: int = 0) -> GeoJSONFeatureCollection:
     """Case-insensitive name search, one result per distinct name.
 
     Names that start with the text come first, then names that contain it. Each result is all segments
@@ -224,6 +249,7 @@ def search_roads(db: Session, q: str, limit: int = 10) -> GeoJSONFeatureCollecti
     needle = " ".join(q.split()).lower()
     if len(needle) < SEARCH_MIN_CHARS:
         raise InvalidRequestError(f"Search text must have at least {SEARCH_MIN_CHARS} characters.")
+    _check_page(limit, offset)
     escaped = _like_escape(needle)
     rows = db.execute(text(
         "WITH hits AS ("
@@ -243,12 +269,12 @@ def search_roads(db: Session, q: str, limit: int = 10) -> GeoJSONFeatureCollecti
         ") SELECT id, name, highway_type, risk_category, vulnerability_index::float8 AS vulnerability_index, "
         "         segments, segments_scored, length_m, "
         f"         ST_AsGeoJSON(geom, {COORD_DECIMALS}) AS geometry, "
-        "         ARRAY[ST_XMin(geom), ST_YMin(geom), ST_XMax(geom), ST_YMax(geom)] AS bbox "
-        "  FROM named ORDER BY is_prefix DESC, key LIMIT :limit"),
-        {"prefix": escaped + "%", "contains": "%" + escaped + "%", "limit": limit + 1}).all()
-    truncated = len(rows) > limit
+        "         ARRAY[ST_XMin(geom), ST_YMin(geom), ST_XMax(geom), ST_YMax(geom)] AS bbox, "
+        "         count(*) OVER() AS total_count "
+        "  FROM named ORDER BY is_prefix DESC, key LIMIT :limit OFFSET :offset"),
+        {"prefix": escaped + "%", "contains": "%" + escaped + "%", "limit": limit, "offset": offset}).all()
     features = []
-    for row in rows[:limit]:
+    for row in rows:
         m = row._mapping
         props = RoadSummaryProperties(id=m["id"], name=m["name"], highway_type=m["highway_type"],
                                       risk_category=m["risk_category"],
@@ -256,7 +282,9 @@ def search_roads(db: Session, q: str, limit: int = 10) -> GeoJSONFeatureCollecti
         props.update(segments=m["segments"], segments_scored=m["segments_scored"],
                      length_m=float(m["length_m"]), bbox=[round(float(c), COORD_DECIMALS) for c in m["bbox"]])
         features.append(GeoJSONFeature(geometry=json.loads(m["geometry"]), properties=props))
-    return GeoJSONFeatureCollection(features=features, number_returned=len(features), truncated=truncated)
+    return _page(features, rows, limit, offset, lambda: db.execute(text(
+        "SELECT count(DISTINCT lower(name)) FROM road_segments r WHERE lower(r.name) LIKE :contains"),
+        {"contains": "%" + escaped + "%"}).scalar_one())
 
 
 # ---------------------------------------------------------------------------- one road
