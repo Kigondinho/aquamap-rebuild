@@ -17,6 +17,7 @@ def _all_sql() -> str:
 def test_scripts_exist_in_execution_order() -> None:
     assert [p.name for p in init_script_paths()] == [
         "001_extensions.sql", "002_schema.sql", "003_indexes.sql", "004_views.sql",
+        "005_classification.sql",
     ]
 
 

@@ -93,6 +93,7 @@ def test_init_scripts_can_be_reapplied(db_engine: Engine) -> None:
     second = apply_init_scripts(db_engine)
     assert first == second == [
         "001_extensions.sql", "002_schema.sql", "003_indexes.sql", "004_views.sql",
+        "005_classification.sql",
     ]
 
 

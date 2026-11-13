@@ -29,3 +29,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS scoring_config_one_active ON scoring_config (i
 CREATE UNIQUE INDEX IF NOT EXISTS road_segments_source_key     ON road_segments     (osm_element, osm_id, part_no);
 CREATE UNIQUE INDEX IF NOT EXISTS river_centerlines_source_key ON river_centerlines (osm_element, osm_id, part_no);
 CREATE UNIQUE INDEX IF NOT EXISTS spatial_layers_name_type_key ON spatial_layers (layer_name, layer_type);
+
+-- Phase 8: road-name search. The b-tree above serves prefix search; this one serves "contains" search
+-- (lower(name) LIKE '%bypass%') without scanning the table.
+CREATE INDEX IF NOT EXISTS road_segments_name_trgm ON road_segments USING GIN (lower(name) gin_trgm_ops);

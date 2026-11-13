@@ -32,7 +32,16 @@ SCORE_MAX: Final[float] = 5.0
 # --- Risk tiers, lowest to highest -------------------------------------------
 TIER_NAMES: Final[tuple[str, ...]] = ("Low", "Medium", "High", "Severe")
 
+# Plain-language labels shown next to the tier names. They describe position on the index only.
+TIER_LABELS: Final[dict[str, str]] = {
+    "Low": "Lower relative vulnerability",
+    "Medium": "Moderate relative vulnerability",
+    "High": "High relative vulnerability",
+    "Severe": "Highest relative vulnerability",
+}
+
 # Lower bounds of Medium, High and Severe on the 1-5 IVI scale: four equal bands of width 1.
+# A value exactly on a bound belongs to the higher tier (2.000 is Medium, 1.999 is Low).
 DEFAULT_TIER_THRESHOLDS: Final[dict[str, float]] = {
     "Medium": 2.0,
     "High": 3.0,

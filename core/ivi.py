@@ -231,6 +231,17 @@ def assign_tier(ivi: float, config: ScoringConfig) -> str:
     return tier
 
 
+def tier_bounds(config: ScoringConfig) -> list[tuple[str, float, float | None]]:
+    """``(tier, lower bound, upper bound)`` from lowest to highest tier.
+
+    The lower bound is inclusive and the upper bound exclusive, except for the top tier, whose upper
+    bound is ``None`` (it runs to the top of the scale, inclusive).
+    """
+    lowers = [defaults.SCORE_MIN, *(config.tier_thresholds[name] for name in defaults.TIER_NAMES[1:])]
+    uppers: list[float | None] = [*lowers[1:], None]
+    return list(zip(defaults.TIER_NAMES, lowers, uppers, strict=True))
+
+
 def score_segment(elevation_m: float | None, slope_pct: float | None, river_dist_m: float | None,
                   surface: str | None, config: ScoringConfig) -> SegmentScore:
     """Score one road segment from its measured inputs, applying the missing-data policy.

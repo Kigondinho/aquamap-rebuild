@@ -82,13 +82,19 @@ def test_stored_results_pass_sql_verification(conn: Connection, setup) -> None:
 def test_verification_detects_tampered_results(conn: Connection, setup) -> None:
     config_version, run_id, roads = setup
     sr.persist_scores(conn, scored_frame(conn, roads), config_version, run_id=run_id)
-    conn.execute(text("UPDATE road_vulnerability SET vulnerability_index = 4.5, risk_category = 'High' WHERE road_id = :r"),
+    from tests.db.conftest import expect_db_error
+
+    # a score with the wrong category cannot even be written (trigger from 005_classification.sql) ...
+    expect_db_error(conn, "UPDATE road_vulnerability SET vulnerability_index = 4.5, risk_category = 'High' "
+                          "WHERE road_id = :r", {"r": roads[1]})
+    # ... but a self-consistent score that no longer follows from its factor scores can, and is caught here
+    conn.execute(text("UPDATE road_vulnerability SET vulnerability_index = 4.5, risk_category = 'Severe' WHERE road_id = :r"),
                  {"r": roads[1]})
     conn.execute(text("UPDATE road_vulnerability SET data_flags = '{}' WHERE road_id = :r"), {"r": roads[4]})
     check = sr.verify_results(conn, config_version, expected_segments=6)
     assert not check["ok"]
     stats = check["stats"]
-    assert (stats["formula_mismatch"], stats["tier_mismatch"], stats["unexplained_null"]) == (1, 1, 1)
+    assert (stats["formula_mismatch"], stats["tier_mismatch"], stats["unexplained_null"]) == (1, 0, 1)
     assert any("expected 6" in e for e in check["errors"])
 
 

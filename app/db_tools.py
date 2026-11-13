@@ -47,7 +47,9 @@ def apply_init_scripts(engine: Engine | None = None) -> list[str]:
     applied: list[str] = []
     with engine.begin() as conn:  # commits on success, rolls everything back on error
         for path in init_script_paths():
-            conn.exec_driver_sql(path.read_text(encoding="utf-8"))
+            # Sent through the driver without parameters, so a literal '%' in the SQL (LIKE patterns,
+            # RAISE messages) is not mistaken for a placeholder. Same transaction as ``conn``.
+            conn.connection.driver_connection.execute(path.read_text(encoding="utf-8"))
             applied.append(path.name)
     return applied
 

@@ -8,8 +8,8 @@ forecast.
 **Stack:** Python 3.12, FastAPI, PostgreSQL/PostGIS, GeoPandas, Rasterio, NumPy, plain HTML/CSS/JS, Leaflet.
 
 > **Status: scaffold, database layer (Phase 3), data acquisition (Phase 4), DEM and slope (Phase 5) and database
-> ingestion of roads and rivers (Phase 6) and the IVI scoring engine (Phase 7).** Authentication, the API queries and map
-> data loading are not implemented yet; those endpoints answer `501 Not Implemented`.
+> ingestion of roads and rivers (Phase 6) the IVI scoring engine (Phase 7) and classification with road queries (Phase 8).** Authentication, export, the
+> admin endpoints and the map interface are not implemented yet; those endpoints answer `501 Not Implemented`.
 > Design: [`docs/phase1_requirements_and_design.md`](docs/phase1_requirements_and_design.md) and
 > [`docs/phase3_database_design.md`](docs/phase3_database_design.md) (the latter amends the former).
 
@@ -133,6 +133,13 @@ python -m pipeline.score_roads --verify-only
 [`docs/phase7_ivi_engine.md`](docs/phase7_ivi_engine.md). The index is a relative ranking, **not a flood probability**.
 The combined entry point `python -m pipeline.run_pipeline` is still a stub; run the steps one by one.
 
+### Categories and road queries (Phase 8)
+
+Low < 2.0 ≤ Medium < 3.0 ≤ High < 4.0 ≤ Severe; a value on a threshold belongs to the higher category. The same rule
+exists in Python (`core.ivi.assign_tier`) and in SQL (`ivi_tier`), and a trigger keeps stored categories consistent.
+Road queries (map area, category, IVI range, road class, name search, radius, detail) are in
+`app/services/roads_query.py`. Details: [`docs/phase8_classification_and_queries.md`](docs/phase8_classification_and_queries.md).
+
 ## Configuration
 
 All settings come from environment variables or `.env` (see `.env.example`). The app refuses to start
@@ -163,7 +170,7 @@ app/          FastAPI application
   errors.py     Exceptions and JSON error handling
 core/         Pure scoring logic and defaults shared by app and pipeline (no I/O)
 pipeline/     Offline GeoPandas/Rasterio processing, run from the command line
-db/init/      Idempotent SQL: 001 extensions, 002 tables, 003 indexes, 004 views
+db/init/      Idempotent SQL: 001 extensions, 002 tables, 003 indexes, 004 views, 005 classification
 static/       HTML, CSS, JS and vendored Leaflet (no build step)
 tests/        pytest suites: unit, api, pipeline, db, structure
 data/         Raw and processed geodata (git-ignored; folders kept)
