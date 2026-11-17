@@ -1,6 +1,7 @@
 """End-of-run report: passed, failed and unverified tests, by area of the system.
 
-Printed after every run. ``pytest --report FILE`` also writes it as Markdown.
+Printed after every run. ``pytest --report=FILE`` also writes it as Markdown (write it as one word with
+``=``: see the note in the root ``conftest.py``).
 
 * passed      the test ran and every check held
 * failed      the test ran and a check did not hold, or the test could not be set up (an error)
@@ -133,7 +134,8 @@ def as_markdown(data: dict, config: pytest.Config) -> str:
 
 def add_option(parser: pytest.Parser) -> None:
     parser.addoption("--report", metavar="FILE", default=None,
-                     help="also write the passed / failed / unverified report to FILE as Markdown")
+                     help="also write the passed / failed / unverified report to FILE as Markdown; "
+                          "write it as --report=FILE (one word)")
 
 
 def terminal_summary(terminalreporter: pytest.TerminalReporter, config: pytest.Config) -> None:
@@ -148,5 +150,9 @@ def terminal_summary(terminalreporter: pytest.TerminalReporter, config: pytest.C
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(as_markdown(data, config), encoding="utf-8")
         terminalreporter.write_line(f"\nreport written to {path}")
+    unverified = data["totals"]["unverified"]
+    if config.getoption("--require-all", default=False) and unverified:
+        terminalreporter.write_line(f"\n--require-all: {unverified} tests did not run, so this run counts as FAILED.",
+                                    red=True, bold=True)
     if sys.stdout.isatty():
         terminalreporter.write_line("")

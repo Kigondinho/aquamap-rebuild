@@ -5,6 +5,7 @@ Command line (run from the project root, with the same environment as the app):
     python -m app.db_tools init     # apply db/init/*.sql in order, in one transaction
     python -m app.db_tools check    # connectivity, PostGIS, tables, SRIDs, GiST indexes
     python -m app.db_tools create-user --email you@example.com --name "Your Name" [--admin]
+    ... create-user ... --password-stdin   # read the password from standard input (scripts, containers)
                                     # asks for the password twice; the only way to create an administrator
 
 The init scripts are idempotent, so ``init`` is safe to run repeatedly and also works on a
@@ -24,6 +25,7 @@ from app.db import get_engine
 from core.config_defaults import STORAGE_SRID
 
 INIT_DIR = Path(__file__).resolve().parents[1] / "db" / "init"
+INIT_LOCK_KEY = 0x41514D4150  # "AQMAP": serialises concurrent schema initialisation
 
 EXPECTED_TABLES: tuple[str, ...] = (
     "users", "auth_otps", "spatial_layers", "scoring_config", "pipeline_runs",
@@ -48,6 +50,9 @@ def apply_init_scripts(engine: Engine | None = None) -> list[str]:
     engine = engine or get_engine()
     applied: list[str] = []
     with engine.begin() as conn:  # commits on success, rolls everything back on error
+        # Two containers starting together (app and pipeline) must not run the scripts at the same time:
+        # the second waits here until the first has committed, then finds nothing left to change.
+        conn.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": INIT_LOCK_KEY})
         for path in init_script_paths():
             # Sent through the driver without parameters, so a literal '%' in the SQL (LIKE patterns,
             # RAISE messages) is not mistaken for a placeholder. Same transaction as ``conn``.
@@ -141,8 +146,9 @@ def _print_diagnostics(d: Diagnostics) -> None:
             print(f"  - {issue}")
 
 
-def _create_user(email: str | None, name: str | None, admin: bool) -> int:
-    """Create an account from the terminal. The password is typed (hidden), never passed as an argument."""
+def _create_user(email: str | None, name: str | None, admin: bool, password_stdin: bool = False) -> int:
+    """Create an account from the terminal. The password is typed (hidden) or read from standard input,
+    never passed as an argument (arguments are visible to other users in the process list)."""
     import getpass
 
     from pydantic import ValidationError
@@ -155,8 +161,11 @@ def _create_user(email: str | None, name: str | None, admin: bool) -> int:
     if not email or not name:
         print("create-user needs --email and --name", file=sys.stderr)
         return 2
-    first = getpass.getpass("Password (at least 8 characters, with a letter and a digit): ")
-    second = getpass.getpass("Repeat password: ")
+    if password_stdin:
+        first = second = sys.stdin.readline().rstrip("\r\n")
+    else:
+        first = getpass.getpass("Password (at least 8 characters, with a letter and a digit): ")
+        second = getpass.getpass("Repeat password: ")
     try:
         payload = RegisterRequest(full_name=name, email=email, password=first, confirm_password=second)
     except ValidationError as exc:
@@ -183,9 +192,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--email", help="create-user: email address")
     parser.add_argument("--name", help="create-user: full name")
     parser.add_argument("--admin", action="store_true", help="create-user: give the administrator role")
+    parser.add_argument("--password-stdin", action="store_true",
+                        help="create-user: read the password from the first line of standard input")
     args = parser.parse_args(argv)
     if args.command == "create-user":
-        return _create_user(args.email, args.name, args.admin)
+        return _create_user(args.email, args.name, args.admin, args.password_stdin)
 
     try:
         if args.command == "init":

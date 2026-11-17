@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import re
 from pathlib import Path
 
@@ -13,13 +14,20 @@ URL_WITH_PASSWORD = re.compile(r"postgres(?:ql)?(?:\+\w+)?://[^:\s/@]+:([^@\s]+)
 PLACEHOLDERS = {"PASSWORD", "<password>", "<password from .env>"}
 
 
+def _is_third_party(directory: Path) -> bool:
+    """A Python virtualenv (any name) or an installed-packages folder: other people's code, not ours."""
+    return (directory / "pyvenv.cfg").exists() or directory.name in {"site-packages", "node_modules"}
+
+
 def _source_files() -> list[Path]:
     files = []
-    for path in ROOT.rglob("*"):
-        if not path.is_file() or SKIP_PARTS & set(path.relative_to(ROOT).parts):
-            continue
-        if path.suffix in SCANNED_SUFFIXES or path.name in {"Dockerfile", ".env.example"}:
-            files.append(path)
+    for directory, subdirectories, names in os.walk(ROOT):
+        here = Path(directory)
+        subdirectories[:] = [d for d in subdirectories if d not in SKIP_PARTS and not _is_third_party(here / d)]
+        for name in names:
+            path = here / name
+            if path.suffix in SCANNED_SUFFIXES or name in {"Dockerfile", ".env.example"}:
+                files.append(path)
     return files
 
 

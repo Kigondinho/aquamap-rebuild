@@ -1,0 +1,142 @@
+# Continuous integration: every push to main and every pull request.
+#
+#   tests   the complete suite (unit, database, pipeline, API, browser) against a throw-away PostGIS
+#           service, with --require-all so that a skipped test fails the run instead of passing quietly
+#   docker  builds the images from a clean checkout, starts database + app with Docker Compose, and
+#           checks health, the schema, sign-in and a restart
+#
+# No secrets are stored: the CI database trusts local connections and lives only inside the job, and
+# the docker job generates its own .env with random values.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: Tests (unit, database, pipeline, API, browser)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    services:
+      postgis:
+        image: postgis/postgis:16-3.4@sha256:44126d872ac91993766c341e369c539e8196614321765d36a6f1bab0419a5fa5
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust   # throw-away database inside this job: no password to keep
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -h 127.0.0.1 -U postgres"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 30
+    env:
+      # The tests create this database and refuse any name that does not end in "_test".
+      AQUAMAP_TEST_DATABASE_URL: postgresql+psycopg://postgres@localhost:5432/aquamap_ci_test
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+            requirements-pipeline.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt -r requirements-pipeline.txt
+
+      - name: Browser for the frontend tests
+        run: |
+          firefox --version
+          if ! command -v geckodriver > /dev/null && [ -n "${GECKOWEBDRIVER:-}" ]; then
+            echo "$GECKOWEBDRIVER" >> "$GITHUB_PATH"
+          fi
+
+      - name: OpenAPI document matches the application
+        run: python -m app.openapi_export --check
+
+      - name: Complete test suite
+        run: python -m pytest --test-db --require-all --report=test-report.md
+
+      - name: Test report in the job summary
+        if: always()
+        run: |
+          if [ -f test-report.md ]; then cat test-report.md >> "$GITHUB_STEP_SUMMARY"; fi
+
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: test-report
+          path: test-report.md
+          if-no-files-found: ignore
+
+  docker:
+    name: Docker start-up from a clean checkout
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Create .env with random secrets
+        run: python3 scripts/init_env.py
+
+      - name: Compose files are valid
+        run: |
+          docker compose config --quiet
+          docker compose --profile pipeline config --quiet
+
+      - name: Build images (app and pipeline)
+        run: docker compose --profile pipeline build
+
+      - name: Pipeline libraries load inside the image
+        # The tests job runs on the Ubuntu runner, whose system libraries can hide a gap in the image.
+        run: docker compose --profile pipeline run --rm --no-deps --entrypoint python pipeline -c "import geopandas, numpy, osmnx, pyproj, rasterio, shapely; print('pipeline libraries ok')"
+
+      - name: Start database and app
+        run: docker compose up -d --wait --wait-timeout 240
+
+      - name: App is healthy and connected to an initialised database
+        run: |
+          curl -fsS http://127.0.0.1:8000/api/v1/health | tee health.json
+          python3 -c "import json; h = json.load(open('health.json')); assert h['status'] == 'ok' and h['database'] is True, h"
+          docker compose exec -T app python -m app.db_tools check
+
+      - name: Sign-in works against the containerised database
+        run: |
+          password="Ci1-$(python3 -c 'import secrets; print(secrets.token_urlsafe(12))')"
+          printf '%s\n' "$password" | docker compose exec -T app \
+            python -m app.db_tools create-user --email ci@example.com --name "CI Check" --password-stdin
+          PASSWORD="$password" python3 -c "import json, os; print(json.dumps({'email': 'ci@example.com', 'password': os.environ['PASSWORD']}))" > login.json
+          curl -fsS -c cookies.txt -H 'Content-Type: application/json' --data @login.json http://127.0.0.1:8000/api/v1/auth/login
+          curl -fsS -b cookies.txt http://127.0.0.1:8000/api/v1/auth/me
+          curl -fsS -b cookies.txt http://127.0.0.1:8000/api/v1/analysis/metadata > /dev/null
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/api/v1/roads/summary)" = 401
+          rm -f login.json cookies.txt
+
+      - name: A restart keeps the schema and the data
+        run: |
+          docker compose restart app
+          docker compose up -d --wait --wait-timeout 120
+          docker compose exec -T app python -m app.db_tools check
+          docker compose exec -T db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc "SELECT count(*) FROM users"' | grep -qx 1
+
+      - name: Logs
+        if: failure()
+        run: docker compose logs --no-color
+
+      - name: Stop and remove
+        if: always()
+        run: docker compose down -v

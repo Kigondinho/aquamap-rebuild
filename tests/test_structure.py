@@ -24,6 +24,7 @@ REQUIRED_FILES = [
     "docs/phase10_authentication.md", "app/services/otp.py", "app/services/email.py",
     "docs/phase11_frontend.md", "static/verify-email.html", "static/reset-password.html",
     "docs/phase12_testing.md", "tests/testdb.py", "tests/report.py", "tests/e2e/conftest.py", "tests/e2e/test_dashboard.py",
+    "docs/phase13_deployment.md", "docker/entrypoint.sh", "scripts/init_env.py", ".github/workflows/ci.yml", "conftest.py",
     "static/js/ui.js", "static/js/search.js", "static/js/nearby.js",
     "app/__init__.py", "app/main.py", "app/settings.py", "app/db.py", "app/db_tools.py", "app/deps.py", "app/errors.py",
     "app/routers/__init__.py", "app/routers/auth.py", "app/routers/roads.py",

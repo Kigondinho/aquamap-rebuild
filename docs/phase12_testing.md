@@ -4,7 +4,7 @@
 pip install -r requirements-dev.txt          # pytest and Selenium
 pytest                                       # quick: everything that needs no database
 pytest --test-db                             # complete: also database, pipeline and browser tests
-pytest --test-db --report docs/test-report.md   # the same, and save the report as Markdown
+pytest --test-db --report=docs/test-report.md  # the same, and save the report as Markdown (one word, with =)
 ```
 
 Every run ends with a report of **passed**, **failed** and **unverified** tests by area (`tests/report.py`):

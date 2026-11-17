@@ -7,58 +7,67 @@ forecast.
 
 **Stack:** Python 3.12, FastAPI, PostgreSQL/PostGIS, GeoPandas, Rasterio, NumPy, plain HTML/CSS/JS, Leaflet.
 
-> **Status: scaffold, database layer (Phase 3), data acquisition (Phase 4), DEM and slope (Phase 5) and database
-> ingestion of roads and rivers (Phase 6) the IVI scoring engine (Phase 7), classification with road queries (Phase 8), the REST API (Phase 9),
-> authentication with email verification and password reset (Phase 10) and the map dashboard (Phase 11).** GeoJSON
-> export, a second factor at sign-in, the admin page and saving configurations from the browser are not implemented yet; those endpoints answer `501 Not Implemented`.
+> **Status:** data pipeline (Phases 4–7), road queries and REST API (8–9), accounts (10), map dashboard (11),
+> automated tests (12), Docker and CI (13). Not built yet: GeoJSON export, a second factor at sign-in, the admin
+> page and saving scoring configurations from the browser (those endpoints answer `501 Not Implemented`).
 > Design: [`docs/phase1_requirements_and_design.md`](docs/phase1_requirements_and_design.md) and
 > [`docs/phase3_database_design.md`](docs/phase3_database_design.md) (the latter amends the former).
 
-## Prerequisites
+## Quick start (Docker)
 
-- Python 3.12 (3.13 also works for the web app)
-- Docker with Docker Compose, for the PostGIS database
-- Git
-
-## Setup
+Needs Git, Docker with Compose v2, Python 3 (only to create `.env`) and internet access for the first data
+download. From a clean clone:
 
 ```bash
-# 1. Create a virtual environment and install the web-app and test dependencies
+git clone git@github.com:Kigondinho/aquamap-rebuild.git
+cd aquamap-rebuild
+
+python3 scripts/init_env.py                    # creates .env with random secrets (git-ignored, readable by you only)
+docker compose up -d --build --wait            # PostGIS + app; the app creates the database schema on start
+docker compose --profile pipeline run --rm pipeline    # download, process and score the data (first time ~10 min)
+docker compose exec app python -m app.db_tools create-user --email you@example.com --name "Your Name" --admin
+```
+
+Open <http://127.0.0.1:8000>, sign in, and the dashboard shows the scored roads. API documentation:
+<http://127.0.0.1:8000/docs>. If port 8000 or 5433 is taken: `python3 scripts/init_env.py --force --app-port 8080
+--db-port 5434` before the first start.
+
+| Task | Command |
+|---|---|
+| Status of the containers | `docker compose ps` |
+| Logs of the app | `docker compose logs -f app` |
+| Stop / start again (data is kept) | `docker compose down` / `docker compose up -d --wait` |
+| After pulling new code | `docker compose up -d --build --wait` (the schema is upgraded on start) |
+| Refresh the data | `docker compose --profile pipeline run --rm pipeline` |
+| One pipeline step | `docker compose --profile pipeline run --rm pipeline python -m pipeline.run_pipeline --only score` |
+| **Delete everything, including the database** | `docker compose down -v` |
+
+How the containers, configuration and CI fit together: [`docs/phase13_deployment.md`](docs/phase13_deployment.md).
+
+## Local development (app on your machine, database in Docker)
+
+```bash
 python3 -m venv .venv
-source .venv/bin/activate            # Windows: .venv\Scripts\activate
-pip install -r requirements-dev.txt
+source .venv/bin/activate                      # Windows: .venv\Scripts\activate
+pip install -r requirements-dev.txt -r requirements-pipeline.txt
 
-# 2. Create your local configuration
-cp .env.example .env
-python -c "import secrets; print(secrets.token_urlsafe(48))"   # paste the output as SECRET_KEY in .env
-# also set POSTGRES_PASSWORD in .env
-
-# 3. Start the database (first start runs db/init/*.sql and creates the schema)
-docker compose up -d db
-
-# 4. Confirm the database is ready: PostGIS, tables, EPSG:32737 geometry columns, GiST indexes
-python -m app.db_tools check
-
-# 5. Start the API with auto-reload
-uvicorn app.main:app --reload
+python3 scripts/init_env.py                    # skip if you already have .env
+docker compose up -d --wait db                 # only the database
+python -m app.db_tools init                    # create or upgrade the schema (safe to repeat)
+python -m pipeline.run_pipeline                # data: download, process, score
+python -m app.db_tools create-user --email you@example.com --name "Your Name" --admin
+uvicorn app.main:app --reload                  # http://127.0.0.1:8000
 ```
 
-Open <http://localhost:8000> for the dashboard shell and <http://localhost:8000/docs> for the
-interactive API documentation. `GET /api/v1/health` reports `"status": "ok"` when the database is
-reachable and `"degraded"` when it is not; the app still starts either way.
-
-### Run everything in Docker instead
-
-```bash
-docker compose up --build        # database + app on http://localhost:8000
-```
+`GET /api/v1/health` reports `"status": "ok"` when the database is reachable and `"degraded"` when it is not; the
+app starts either way.
 
 ### Tests
 
 ```bash
 pytest                           # quick: everything that needs no database (database tests are reported as unverified)
 pytest --test-db                 # complete: also the database, pipeline and browser tests, in a SEPARATE database
-pytest --test-db --report docs/test-report.md   # the same, and save the passed / failed / unverified report
+pytest --test-db --report=docs/test-report.md  # the same, and save the passed / failed / unverified report
 ```
 
 `--test-db` uses the database `<POSTGRES_DB>_test` (for example `aquamap_db_test`) on the server in `.env` and
@@ -67,19 +76,23 @@ run before a single statement, so the development and production databases canno
 need Firefox and geckodriver (`pip install -r requirements-dev.txt` installs Selenium); without them they are
 reported as unverified. Details: [`docs/phase12_testing.md`](docs/phase12_testing.md).
 
+Write the report option as one word, `--report=FILE`. **CI** (GitHub Actions, `.github/workflows/ci.yml`) runs
+the complete suite with `--require-all`, so a skipped test fails the run, and separately builds the images and
+starts the whole stack from a clean checkout.
+
 ### Database
 
 PostgreSQL 16 with PostGIS 3.4 runs in Docker. Credentials come only from `.env`; Compose will not
-start without `POSTGRES_PASSWORD`.
+start without `POSTGRES_PASSWORD`. The database port is published on 127.0.0.1 only.
 
 | Task | Command |
 |---|---|
-| Start | `docker compose up -d db` |
-| Apply or re-apply the schema without losing data (idempotent) | `python -m app.db_tools init` |
+| Start | `docker compose up -d --wait db` |
+| Create, or re-apply, the schema without losing data (idempotent; the app container does this on every start) | `python -m app.db_tools init` |
 | Check PostGIS, tables, SRIDs and indexes | `python -m app.db_tools check` |
 | Open a SQL shell | `docker compose exec db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'` |
 | Stop | `docker compose stop db` |
-| **Wipe everything and start clean** (deletes all data) | `docker compose down -v && docker compose up -d db` |
+| **Wipe everything and start clean** (deletes all data) | `docker compose down -v && docker compose up -d --wait` |
 
 Tables: `users`, `auth_otps`, `spatial_layers`, `scoring_config`, `pipeline_runs`, `road_segments`,
 `river_centerlines`, `road_vulnerability` (results, stored separately from roads) and the view
@@ -193,6 +206,9 @@ placeholder values are rejected and the interactive docs are disabled.
 | `OTP_TTL_MINUTES`, `OTP_MAX_ATTEMPTS`, `OTP_RESEND_SECONDS` | One-time code lifetime, wrong guesses allowed, wait between codes | `10`, `5`, `60` |
 | `ENABLE_2FA` | Second factor at sign-in (not built: leave off) | `false` |
 | `DATA_DIR` | Raw and processed geodata | `data` |
+| `APP_PORT` | Port of the app on this machine (Docker; 127.0.0.1 only) | `8000` |
+| `HOST_UID`, `HOST_GID` | User the pipeline container writes `data/` as (set by `scripts/init_env.py`) | `1000` |
+| `DB_AUTO_INIT` | Containers create or upgrade the schema on start | `true` |
 
 ## Project layout
 
@@ -210,9 +226,12 @@ core/         Pure scoring logic and defaults shared by app and pipeline (no I/O
 pipeline/     Offline GeoPandas/Rasterio processing, run from the command line
 db/init/      Idempotent SQL: 001 extensions, 002 tables, 003 indexes, 004 views, 005 classification
 static/       HTML, CSS, JS and vendored Leaflet (no build step)
-tests/        pytest suites: unit, api, pipeline, db, structure
+tests/        pytest suites: unit, api, pipeline, db, e2e (browser), structure
+docker/       Container start-up script (schema first, then the app)
+scripts/      init_env.py: creates .env with random secrets
+.github/      CI workflow
 data/         Raw and processed geodata (git-ignored; folders kept)
-docs/         Design documents
+docs/         Design and phase documents
 ```
 
 ## Conventions
@@ -233,9 +252,6 @@ licence (`static/vendor/leaflet/LICENSE`).
 
 ## Roadmap
 
-1. Scoring engine (`core/ivi.py`) with unit tests: done (Phase 7).
-2. Data pipeline: fetch and validate (Phase 4), DEM/slope (Phase 5), vector load (Phase 6), metrics and scoring (Phase 7) done.
-3. Roads API and GeoJSON export.
-4. Authentication (registration, login, optional email 2FA).
-5. Map data loading, filters, popups and summary cards.
-6. Validation, packaging and deployment.
+Done: scoring engine and data pipeline (Phases 4–7), road queries and API (8–9), accounts (10), dashboard (11),
+tests (12), Docker and CI (13). Still to do: GeoJSON export, the admin page and saving configurations from the
+browser, an optional second factor at sign-in, and a public deployment behind HTTPS.

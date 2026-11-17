@@ -1,5 +1,8 @@
+# Keep the build context small and free of secrets and local files.
+# The Dockerfile copies only app/, core/, pipeline/, db/, static/ and docker/entrypoint.sh.
 .git
 .github
+.claude
 .env
 .env.*
 !.env.example
@@ -8,7 +11,9 @@ venv
 __pycache__
 *.pyc
 .pytest_cache
-data/raw
-data/processed
+.coverage
+data
 docs
 tests
+notebooks
+*.log
