@@ -1,8 +1,8 @@
 # AquaMap test report
 
-Run: 2026-11-17 10:58 UTC · Python 3.12.3 · `pytest -q -p no:cacheprovider --test-db --require-all --report=docs/phase13_test_report.md`
+Run: 2026-11-17 11:12 UTC · Python 3.12.3 · `pytest -q -p no:cacheprovider --test-db --require-all --report=docs/phase13_test_report.md`
 
-**980 passed · 0 failed · 0 unverified** (of 980 tests).
+**981 passed · 0 failed · 0 unverified** (of 981 tests).
 
 | Area | Passed | Failed | Unverified |
 |---|---:|---:|---:|
@@ -14,11 +14,11 @@ Run: 2026-11-17 10:58 UTC · Python 3.12.3 · `pytest -q -p no:cacheprovider --t
 | Integration: database, schema, constraints | 72 | 0 | 0 |
 | Integration: ingestion and full pipeline | 23 | 0 | 0 |
 | Integration: spatial queries, filtering, road detail | 125 | 0 | 0 |
-| Integration: API responses | 147 | 0 | 0 |
+| Integration: API responses | 148 | 0 | 0 |
 | Frontend: in a real browser | 32 | 0 | 0 |
 | Frontend: files and API wiring | 48 | 0 | 0 |
 | Project: structure and secrets | 144 | 0 | 0 |
-| **Total** | **980** | **0** | **0** |
+| **Total** | **981** | **0** | **0** |
 
 *Passed*: ran and every check held. *Failed*: ran and a check did not hold, or could not be set up. *Unverified*: did not run (skipped), so it proves nothing either way.
 

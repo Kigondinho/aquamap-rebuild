@@ -123,6 +123,17 @@ def test_interactive_docs_are_served(client: TestClient) -> None:
     assert page.status_code == 200 and "swagger" in page.text.lower()
 
 
+def test_the_document_can_be_generated_without_any_local_configuration(monkeypatch: pytest.MonkeyPatch) -> None:
+    """As in CI: no .env and no secrets in the environment."""
+    from app.openapi_export import build
+
+    for name in ("SECRET_KEY", "POSTGRES_PASSWORD", "SESSION_COOKIE_NAME", "APP_ENV"):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("SESSION_COOKIE_NAME", "something_else")   # a local setting must not leak into the file
+    document = json.loads(build())
+    assert document["components"]["securitySchemes"]["SessionCookie"]["name"] == "aquamap_session"
+
+
 def test_committed_openapi_file_matches_the_application() -> None:
     from app.openapi_export import DEFAULT_PATH, build
 

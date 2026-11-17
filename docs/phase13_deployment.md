@@ -103,8 +103,11 @@ were not touched.
 7. **CI Docker job, reproduced**: every `run` step of the job read from `ci.yml` and executed with GitHub's default
    shell options (only the port and Compose project name changed): **succeeded in 78 s**.
 
-Not checked here: the workflow on GitHub's servers itself (there is no GitHub CLI on this machine). The first push
-will run it; look at the repository's Actions tab.
+On GitHub, the first run (commit `f9fb544`) passed the Docker job but failed the test job at its first check: the
+OpenAPI exporter needed the app's settings, and CI has no `.env` or secrets (the local reproduction had run that
+step while the copy still had a `.env`). The exporter now builds the document in a separate process with a clean,
+fixed configuration, which also stops local settings from leaking into the committed file; a test reproduces the
+CI situation.
 
 ## Deployment notes
 
