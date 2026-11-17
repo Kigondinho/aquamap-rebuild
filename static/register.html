@@ -7,20 +7,23 @@
   <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-  <main class="centered">
-    <form class="panel" id="register-form" method="post" action="/api/v1/auth/register" novalidate>
-      <h1>Create your account</h1>
+  <main class="auth">
+    <form class="auth-card" id="register-form" novalidate>
+      <div class="brand">AquaMap</div>
+      <h1>Create an account</h1>
+      <p class="lead">You need an account to view the map.</p>
+      <div id="form-message" role="alert" aria-live="polite"></div>
       <div class="field"><label for="full_name">Full name</label>
-        <input id="full_name" name="full_name" type="text" autocomplete="name" required></div>
+        <input id="full_name" name="full_name" type="text" autocomplete="name" required minlength="2" maxlength="120"></div>
       <div class="field"><label for="email">Email</label>
-        <input id="email" name="email" type="email" autocomplete="email" required></div>
-      <div class="field"><label for="password">Password (at least 8 characters)</label>
-        <input id="password" name="password" type="password" autocomplete="new-password" minlength="8" required></div>
-      <div class="field"><label for="confirm_password">Confirm password</label>
-        <input id="confirm_password" name="confirm_password" type="password" autocomplete="new-password" minlength="8" required></div>
-      <p class="error" id="form-error" role="alert"></p>
+        <input id="email" name="email" type="email" autocomplete="email" required maxlength="254"></div>
+      <div class="field"><label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="new-password" required minlength="8" maxlength="128" aria-describedby="password-hint">
+        <span class="hint" id="password-hint">At least 8 characters, with a letter and a digit.</span></div>
+      <div class="field"><label for="confirm_password">Repeat password</label>
+        <input id="confirm_password" name="confirm_password" type="password" autocomplete="new-password" required></div>
       <button type="submit">Create account</button>
-      <p class="note">Already registered? <a href="/login">Sign in</a>.</p>
+      <div class="auth-links"><span>Already registered? <a href="/login">Sign in</a></span></div>
     </form>
   </main>
   <script type="module" src="/static/js/auth.js"></script>

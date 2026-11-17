@@ -6,7 +6,8 @@ turn them into JSON. Every error response, whatever its cause, has the same shap
     {"detail": "One sentence saying what went wrong."}
 
 Validation failures (422) add ``"errors": [{"field": "...", "message": "..."}]`` with one entry per
-rejected parameter. Unexpected exceptions are logged server-side and returned as a generic 500 with
+rejected parameter. A few errors a client must tell apart add ``"code"`` (for example
+``email_not_verified``). Unexpected exceptions are logged server-side and returned as a generic 500 with
 no internals; a database that cannot be reached is a 503.
 """
 
@@ -28,9 +29,12 @@ class AquaMapError(Exception):
 
     status_code: int = 500
     default_detail: str = "Internal server error."
+    code: str | None = None  # optional machine-readable reason, for a client that must branch on it
 
-    def __init__(self, detail: str | None = None) -> None:
+    def __init__(self, detail: str | None = None, code: str | None = None) -> None:
         self.detail = detail or self.default_detail
+        if code is not None:
+            self.code = code
         super().__init__(self.detail)
 
 
@@ -74,6 +78,11 @@ class PayloadTooLargeError(AquaMapError):
     default_detail = "The requested result is too large; narrow the filters or the map area."
 
 
+class BadRequestError(AquaMapError):
+    status_code = 400
+    default_detail = "The request could not be completed."
+
+
 class TooManyRequestsError(AquaMapError):
     status_code = 429
     default_detail = "Too many attempts. Try again later."
@@ -94,7 +103,8 @@ async def _handle_aquamap_error(_: Request, exc: AquaMapError) -> JSONResponse:
         headers["Retry-After"] = str(exc.retry_after)
     if isinstance(exc, AuthenticationError):
         headers["WWW-Authenticate"] = "Cookie"
-    return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail}, headers=headers or None)
+    content = {"detail": exc.detail} | ({"code": exc.code} if exc.code else {})
+    return JSONResponse(status_code=exc.status_code, content=content, headers=headers or None)
 
 
 def _field_name(location: tuple) -> str:

@@ -27,13 +27,14 @@ session_cookie = APIKeyCookie(
 def get_current_user(db: DbSession, token: Annotated[str | None, Depends(session_cookie)] = None) -> CurrentUser:
     """Resolve the signed-in user from the session cookie.
 
-    401 when the cookie is absent, expired or altered, or when the account no longer exists or is
-    disabled. The role comes from the database, not from the token.
+    401 when the cookie is absent, expired or altered, when the account no longer exists or is
+    disabled, or when the session was ended (sign-out, password change or reset). The role comes from
+    the database, not from the token.
     """
     if not token:
         raise AuthenticationError("Authentication required. Please sign in.")
-    user_id, _role_in_token = sessions.decode_session_token(token)
-    return auth_service.get_active_user(db, user_id)
+    claims = sessions.decode_session(token)
+    return auth_service.get_active_user(db, claims.user_id, claims.version)
 
 
 CurrentUserDep = Annotated[CurrentUser, Depends(get_current_user)]

@@ -35,8 +35,8 @@ def optional_user(db: DbSession,
     if not token:
         return None
     try:
-        user_id, _ = sessions.decode_session_token(token)
-        return auth_service.get_active_user(db, user_id)
+        claims = sessions.decode_session(token)
+        return auth_service.get_active_user(db, claims.user_id, claims.version)
     except AuthenticationError:
         return None
 
@@ -50,13 +50,23 @@ def dashboard(user: OptionalUser) -> Response:
 
 
 @router.get("/login")
-def login_page() -> FileResponse:
-    return _page("login.html")
+def login_page(user: OptionalUser) -> Response:
+    return RedirectResponse("/", status_code=303) if user else _page("login.html")
 
 
 @router.get("/register")
-def register_page() -> FileResponse:
-    return _page("register.html")
+def register_page(user: OptionalUser) -> Response:
+    return RedirectResponse("/", status_code=303) if user else _page("register.html")
+
+
+@router.get("/verify-email")
+def verify_email_page() -> FileResponse:
+    return _page("verify-email.html")
+
+
+@router.get("/reset-password")
+def reset_password_page() -> FileResponse:
+    return _page("reset-password.html")
 
 
 @router.get("/verify-2fa")

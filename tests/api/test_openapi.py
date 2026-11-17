@@ -10,7 +10,9 @@ from fastapi.testclient import TestClient
 
 ROOT = Path(__file__).resolve().parents[2]
 PUBLIC = {("get", "/api/v1/health"), ("post", "/api/v1/auth/register"), ("post", "/api/v1/auth/login"),
-          ("post", "/api/v1/auth/logout"), ("post", "/api/v1/auth/verify-2fa"), ("post", "/api/v1/auth/resend-2fa")}
+          ("post", "/api/v1/auth/logout"), ("post", "/api/v1/auth/verify-2fa"), ("post", "/api/v1/auth/resend-2fa"),
+          ("post", "/api/v1/auth/verify-email"), ("post", "/api/v1/auth/resend-verification"),
+          ("post", "/api/v1/auth/password/forgot"), ("post", "/api/v1/auth/password/reset")}
 PAGINATED = ["/api/v1/roads", "/api/v1/roads/search", "/api/v1/roads/nearby"]
 
 
@@ -66,7 +68,7 @@ def test_restricted_operations_document_401_and_all_errors_use_one_schema(spec: 
             if code.startswith(("4", "5")):
                 assert ref_name(response["content"]["application/json"]["schema"]) == "ErrorResponse", (method, path, code)
     error = spec["components"]["schemas"]["ErrorResponse"]
-    assert error["required"] == ["detail"] and set(error["properties"]) == {"detail", "errors"}
+    assert error["required"] == ["detail"] and set(error["properties"]) == {"detail", "errors", "code"}
 
 
 @pytest.mark.parametrize("path", PAGINATED)
@@ -100,9 +102,20 @@ def test_parameters_carry_their_limits(spec: dict) -> None:
 
 
 def test_passwords_never_appear_in_response_schemas(spec: dict) -> None:
-    for name in ("CurrentUser", "LoginResponse", "RegisterResponse"):
+    for name in ("CurrentUser", "LoginResponse", "RegisterResponse", "MessageResponse"):
         text = json.dumps(spec["components"]["schemas"][name]).lower()
-        assert "password" not in text and "hash" not in text, name
+        assert "password" not in text and "hash" not in text and "otp" not in text, name
+    assert "code" not in spec["components"]["schemas"]["RegisterResponse"]["properties"]  # the emailed code is never returned
+
+
+def test_account_endpoints_are_documented(spec: dict) -> None:
+    for path in ("register", "verify-email", "resend-verification", "login", "logout", "password/change",
+                 "password/forgot", "password/reset"):
+        assert f"/api/v1/auth/{path}" in spec["paths"], path
+    assert "/api/v1/auth/me" in spec["paths"]
+    assert spec["paths"]["/api/v1/auth/password/change"]["post"]["security"] == [{"SessionCookie": []}]
+    code = spec["components"]["schemas"]["VerifyEmailRequest"]["properties"]["code"]
+    assert code["pattern"] == "^\\d{6}$"
 
 
 def test_interactive_docs_are_served(client: TestClient) -> None:

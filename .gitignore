@@ -50,3 +50,6 @@ Thumbs.db
 
 # Node (not used at runtime; guards against stray tooling)
 node_modules/
+
+# Local tooling
+.claude/

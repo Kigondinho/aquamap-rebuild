@@ -11,6 +11,15 @@
             "title": "Flags",
             "type": "object"
           },
+          "road_classes": {
+            "default": [],
+            "description": "Every road class in the database, largest first; use those with an index as filter choices",
+            "items": {
+              "$ref": "#/components/schemas/RoadClassCount"
+            },
+            "title": "Road Classes",
+            "type": "array"
+          },
           "roads_analysed": {
             "description": "Roads with a stored result (eligible classes)",
             "title": "Roads Analysed",
@@ -224,9 +233,36 @@
         "title": "CurrentUser",
         "type": "object"
       },
-      "ErrorResponse": {
-        "description": "Body of every error response. ``errors`` is present only for validation failures (422).",
+      "EmailRequest": {
+        "additionalProperties": false,
         "properties": {
+          "email": {
+            "format": "email",
+            "maxLength": 254,
+            "title": "Email",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "title": "EmailRequest",
+        "type": "object"
+      },
+      "ErrorResponse": {
+        "description": "Body of every error response. ``errors`` is present only for validation failures (422); ``code``\nonly where a client needs to tell reasons apart (for example ``email_not_verified``).",
+        "properties": {
+          "code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
+          },
           "detail": {
             "title": "Detail",
             "type": "string"
@@ -740,6 +776,73 @@
         "title": "Pagination",
         "type": "object"
       },
+      "PasswordChangeRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "confirm_password": {
+            "maxLength": 128,
+            "minLength": 8,
+            "title": "Confirm Password",
+            "type": "string"
+          },
+          "current_password": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Current Password",
+            "type": "string"
+          },
+          "new_password": {
+            "maxLength": 128,
+            "minLength": 8,
+            "title": "New Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "new_password",
+          "confirm_password",
+          "current_password"
+        ],
+        "title": "PasswordChangeRequest",
+        "type": "object"
+      },
+      "PasswordResetRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "description": "The six-digit code from the email",
+            "pattern": "^\\d{6}$",
+            "title": "Code",
+            "type": "string"
+          },
+          "confirm_password": {
+            "maxLength": 128,
+            "minLength": 8,
+            "title": "Confirm Password",
+            "type": "string"
+          },
+          "email": {
+            "format": "email",
+            "maxLength": 254,
+            "title": "Email",
+            "type": "string"
+          },
+          "new_password": {
+            "maxLength": 128,
+            "minLength": 8,
+            "title": "New Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "new_password",
+          "confirm_password",
+          "email",
+          "code"
+        ],
+        "title": "PasswordResetRequest",
+        "type": "object"
+      },
       "PipelineStatus": {
         "properties": {
           "finished_at": {
@@ -859,6 +962,12 @@
           },
           "user": {
             "$ref": "#/components/schemas/CurrentUser"
+          },
+          "verification_required": {
+            "default": false,
+            "description": "True: a code was emailed and the address must be confirmed before signing in",
+            "title": "Verification Required",
+            "type": "boolean"
           }
         },
         "required": [
@@ -879,6 +988,30 @@
           "pending_token"
         ],
         "title": "Resend2FARequest",
+        "type": "object"
+      },
+      "RoadClassCount": {
+        "properties": {
+          "highway_type": {
+            "title": "Highway Type",
+            "type": "string"
+          },
+          "segments": {
+            "title": "Segments",
+            "type": "integer"
+          },
+          "with_index": {
+            "description": "Segments of this class that have an index",
+            "title": "With Index",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "highway_type",
+          "segments",
+          "with_index"
+        ],
+        "title": "RoadClassCount",
         "type": "object"
       },
       "RoadStatsResponse": {
@@ -1114,6 +1247,29 @@
           "otp_code"
         ],
         "title": "Verify2FARequest",
+        "type": "object"
+      },
+      "VerifyEmailRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "description": "The six-digit code from the email",
+            "pattern": "^\\d{6}$",
+            "title": "Code",
+            "type": "string"
+          },
+          "email": {
+            "format": "email",
+            "maxLength": 254,
+            "title": "Email",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "code"
+        ],
+        "title": "VerifyEmailRequest",
         "type": "object"
       }
     },
@@ -1448,7 +1604,7 @@
     },
     "/api/v1/auth/login": {
       "post": {
-        "description": "Checks the password and sets the session as an HTTP-only cookie. After 5 failed attempts for the same\nemail from the same address within 15 minutes, further attempts answer 429.",
+        "description": "Checks the password and sets the session as an HTTP-only cookie. 403 with `code: email_not_verified`\nif the address still has to be confirmed. After 5 failed attempts for the same email from the same\naddress within 15 minutes, further attempts answer 429.",
         "operationId": "login_api_v1_auth_login_post",
         "requestBody": {
           "content": {
@@ -1480,6 +1636,16 @@
               }
             },
             "description": "Not signed in, or the session expired"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Signed in, but not allowed"
           },
           "422": {
             "content": {
@@ -1520,7 +1686,7 @@
     },
     "/api/v1/auth/logout": {
       "post": {
-        "description": "Clears the session cookie. Safe to call when not signed in.",
+        "description": "Ends the session on the server (and every other session of the account), then clears the cookie.\nA copy of the old cookie stops working. Safe to call when not signed in.",
         "operationId": "logout_api_v1_auth_logout_post",
         "responses": {
           "200": {
@@ -1586,9 +1752,210 @@
         ]
       }
     },
+    "/api/v1/auth/password/change": {
+      "post": {
+        "description": "Needs the current password. All other sessions of the account end; this browser stays signed in.",
+        "operationId": "change_password_api_v1_auth_password_change_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordChangeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request could not be completed (for example a wrong or expired code)"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not signed in, or the session expired"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "A parameter or the body is invalid"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too many attempts"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Database unavailable"
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Change the password of the signed-in user",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/password/forgot": {
+      "post": {
+        "description": "Always answers the same, whether or not the address has an account. 503 if this server cannot send email.",
+        "operationId": "forgot_password_api_v1_auth_password_forgot_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "A parameter or the body is invalid"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Database unavailable"
+          }
+        },
+        "summary": "Email a password reset code",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/password/reset": {
+      "post": {
+        "description": "Ends every session of the account. Does not sign in: use the new password at `/auth/login`.",
+        "operationId": "reset_password_api_v1_auth_password_reset_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordResetRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request could not be completed (for example a wrong or expired code)"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "A parameter or the body is invalid"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Database unavailable"
+          }
+        },
+        "summary": "Set a new password with an emailed code",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
     "/api/v1/auth/register": {
       "post": {
-        "description": "Creates a normal user account. It does not sign the user in. Administrators are created from the\ncommand line (`python -m app.db_tools create-user --admin`), never through this endpoint.",
+        "description": "Creates a normal user account and does not sign in. When the server can send email, a six-digit code\nis emailed and the address must be confirmed (`/auth/verify-email`) before signing in;\n`verification_required` says which applies. Administrators are created from the command line only.",
         "operationId": "register_api_v1_auth_register_post",
         "requestBody": {
           "content": {
@@ -1693,7 +2060,59 @@
             "description": "Not implemented"
           }
         },
-        "summary": "Resend a one-time code (optional module, not built)",
+        "summary": "Resend a sign-in code (optional module, not built)",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/resend-verification": {
+      "post": {
+        "description": "Always answers the same, whether or not the address has an account. At most one code per minute.",
+        "operationId": "resend_verification_api_v1_auth_resend_verification_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "A parameter or the body is invalid"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Database unavailable"
+          }
+        },
+        "summary": "Email a new verification code",
         "tags": [
           "Authentication"
         ]
@@ -1744,7 +2163,69 @@
             "description": "Not implemented"
           }
         },
-        "summary": "Verify a one-time code (optional module, not built)",
+        "summary": "Verify a sign-in code (optional module, not built)",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/v1/auth/verify-email": {
+      "post": {
+        "description": "The code is valid for a few minutes, works once, and is cancelled after 5 wrong guesses. Every failure\ngives the same answer (400).",
+        "operationId": "verify_email_api_v1_auth_verify_email_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyEmailRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request could not be completed (for example a wrong or expired code)"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "A parameter or the body is invalid"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Database unavailable"
+          }
+        },
+        "summary": "Confirm an email address with its code",
         "tags": [
           "Authentication"
         ]

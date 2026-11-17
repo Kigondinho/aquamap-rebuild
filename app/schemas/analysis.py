@@ -36,6 +36,12 @@ class LayerSummary(BaseModel):
     loaded_at: datetime
 
 
+class RoadClassCount(BaseModel):
+    highway_type: str
+    segments: int
+    with_index: int = Field(description="Segments of this class that have an index")
+
+
 class AnalysisCoverage(BaseModel):
     roads_total: int
     roads_analysed: int = Field(description="Roads with a stored result (eligible classes)")
@@ -43,6 +49,8 @@ class AnalysisCoverage(BaseModel):
     roads_without_index: int = Field(description="Analysed, but no terrain data, so no index")
     roads_not_analysed: int = Field(description="Not eligible by road class, or loaded after the last run")
     flags: dict[str, int] = Field(description="Number of analysed roads carrying each data flag")
+    road_classes: list[RoadClassCount] = Field(
+        default=[], description="Every road class in the database, largest first; use those with an index as filter choices")
 
 
 class AnalysisMetadataResponse(BaseModel):

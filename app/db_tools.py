@@ -165,7 +165,8 @@ def _create_user(email: str | None, name: str | None, admin: bool) -> int:
         return 2
     try:
         with Session(get_engine()) as db:
-            user = register_user(db, payload, role="admin" if admin else "user")
+            # created by an operator at the terminal: the address is taken as confirmed
+            user, _ = register_user(db, payload, role="admin" if admin else "user", verified=True)
     except ConflictError as exc:
         print(exc.detail, file=sys.stderr)
         return 1

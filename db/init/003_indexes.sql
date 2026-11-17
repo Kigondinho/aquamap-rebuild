@@ -33,3 +33,6 @@ CREATE UNIQUE INDEX IF NOT EXISTS spatial_layers_name_type_key ON spatial_layers
 -- Phase 8: road-name search. The b-tree above serves prefix search; this one serves "contains" search
 -- (lower(name) LIKE '%bypass%') without scanning the table.
 CREATE INDEX IF NOT EXISTS road_segments_name_trgm ON road_segments USING GIN (lower(name) gin_trgm_ops);
+
+-- Phase 10: the newest unused code of a user for a purpose.
+CREATE INDEX IF NOT EXISTS auth_otps_lookup_idx ON auth_otps (user_id, purpose, created_at DESC) WHERE NOT consumed;

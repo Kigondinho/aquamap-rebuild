@@ -1,25 +1,23 @@
 """Fixtures for tests that need a real PostGIS database.
 
-Set ``AQUAMAP_TEST_DATABASE_URL`` to a disposable database, for example the Docker one:
+    pytest --test-db        # uses (and creates if needed) the separate database <POSTGRES_DB>_test
 
-    export AQUAMAP_TEST_DATABASE_URL="postgresql+psycopg://aquamap_user:<password from .env>@localhost:5433/aquamap_db"
-    pytest -m db
-
-Without it every ``db`` test is skipped. The init scripts are applied first (they are
-idempotent). Each test then runs inside a transaction that is rolled back, so nothing is left behind.
+or set ``AQUAMAP_TEST_DATABASE_URL`` to a dedicated test database. Without either, every ``db`` test
+is skipped. Only a database whose name ends in ``_test`` is accepted (``tests/testdb.py``), so the
+development and production databases cannot be used by mistake. The init scripts are applied first
+(they are idempotent). Each test then runs inside a transaction that is rolled back.
+The ``database_url`` and ``db_engine`` fixtures live in ``tests/conftest.py`` (the browser tests use them too).
 """
 
 from __future__ import annotations
 
 import json
-import os
 from collections.abc import Callable, Iterator
 
 import pytest
-from sqlalchemy import Connection, Engine, create_engine, text
+from sqlalchemy import Connection, Engine, text
 from sqlalchemy.exc import DBAPIError
 
-from app.db_tools import apply_init_scripts
 from core import config_defaults as defaults
 
 # A point in central Nairobi (lon, lat in EPSG:4326).
@@ -27,22 +25,6 @@ NAIROBI_LON, NAIROBI_LAT = 36.82, -1.29
 
 # SQL expression for a Nairobi origin point in the storage CRS (EPSG:32737).
 ORIGIN_SQL = "ST_Transform(ST_SetSRID(ST_MakePoint(36.82, -1.29), 4326), 32737)"
-
-
-@pytest.fixture(scope="session")
-def database_url() -> str:
-    url = os.environ.get("AQUAMAP_TEST_DATABASE_URL")
-    if not url:
-        pytest.skip("AQUAMAP_TEST_DATABASE_URL not set")
-    return url
-
-
-@pytest.fixture(scope="session")
-def db_engine(database_url: str) -> Iterator[Engine]:
-    engine = create_engine(database_url)
-    apply_init_scripts(engine)
-    yield engine
-    engine.dispose()
 
 
 @pytest.fixture

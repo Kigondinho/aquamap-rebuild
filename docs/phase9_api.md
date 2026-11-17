@@ -125,8 +125,7 @@ Run against the real server and data (52,471 roads):
 ## Limitations
 
 - The sign-in limiter is kept in the process: it resets on restart and is not shared between worker processes.
-- Signing out clears the cookie; a copied token stays valid until it expires (there is no server-side session list).
-  Disabling the account ends it at once.
-- No password reset or change, no email verification and no second factor.
+- Superseded by Phase 10 ([`phase10_authentication.md`](phase10_authentication.md)): sign-out now ends the session on
+  the server, and password change, password reset and email verification exist. There is still no second factor.
 - Requests that change state are JSON POSTs protected by `SameSite=Lax`; there is no separate CSRF token.
 - `offset` pagination re-reads earlier rows, so very deep pages of the whole county get slower.

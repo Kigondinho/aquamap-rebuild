@@ -49,7 +49,7 @@ def test_token_round_trip() -> None:
 
 def test_token_holds_no_personal_data() -> None:
     payload = jwt.decode(sessions.create_session_token(uuid4(), "user"), options={"verify_signature": False})
-    assert set(payload) == {"sub", "role", "typ", "iat", "exp"}
+    assert set(payload) == {"sub", "role", "ver", "typ", "iat", "exp"}
 
 
 def test_expired_token_is_rejected() -> None:

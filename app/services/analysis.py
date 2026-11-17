@@ -10,6 +10,7 @@ from app.schemas.analysis import (
     AnalysisMetadataResponse,
     FactorDefinition,
     LayerSummary,
+    RoadClassCount,
     RunInfo,
 )
 from app.schemas.meta import TierDefinition
@@ -67,6 +68,10 @@ def get_analysis_metadata(db: Session) -> AnalysisMetadataResponse:
     layers = [LayerSummary(**r) for r in db.execute(text(
         "SELECT layer_name, layer_type, source, license, feature_count, uploaded_at AS loaded_at FROM spatial_layers "
         "ORDER BY layer_type, layer_name")).mappings()]
+    classes = [RoadClassCount(**r) for r in db.execute(text(
+        "SELECT r.highway_type, count(*) AS segments, count(v.vulnerability_index) AS with_index "
+        "FROM road_segments r LEFT JOIN road_vulnerability v ON v.road_id = r.road_id "
+        "GROUP BY r.highway_type ORDER BY count(*) DESC, r.highway_type")).mappings()]
     analysed, with_index = int(stored["analysed"]), int(stored["with_index"])
     return AnalysisMetadataResponse(
         analysed=analysed > 0, index_name="Infrastructure Vulnerability Index (IVI)", formula=FORMULA,
@@ -79,5 +84,5 @@ def get_analysis_metadata(db: Session) -> AnalysisMetadataResponse:
         boundary_rule=TIER_BOUNDARY_RULE, last_run=run,
         coverage=AnalysisCoverage(roads_total=roads_total, roads_analysed=analysed, roads_with_index=with_index,
                                   roads_without_index=analysed - with_index, roads_not_analysed=roads_total - analysed,
-                                  flags=flags),
+                                  flags=flags, road_classes=classes),
         layers=layers, crs_storage=f"EPSG:{STORAGE_SRID}", crs_api=f"EPSG:{API_SRID}", attribution=ATTRIBUTION)

@@ -8,9 +8,9 @@ forecast.
 **Stack:** Python 3.12, FastAPI, PostgreSQL/PostGIS, GeoPandas, Rasterio, NumPy, plain HTML/CSS/JS, Leaflet.
 
 > **Status: scaffold, database layer (Phase 3), data acquisition (Phase 4), DEM and slope (Phase 5) and database
-> ingestion of roads and rivers (Phase 6) the IVI scoring engine (Phase 7), classification with road queries (Phase 8) and the REST API with sign-in
-> (Phase 9).** The map interface, GeoJSON export, the email second factor and saving configurations from the browser are
-> not implemented yet; those endpoints answer `501 Not Implemented`.
+> ingestion of roads and rivers (Phase 6) the IVI scoring engine (Phase 7), classification with road queries (Phase 8), the REST API (Phase 9),
+> authentication with email verification and password reset (Phase 10) and the map dashboard (Phase 11).** GeoJSON
+> export, a second factor at sign-in, the admin page and saving configurations from the browser are not implemented yet; those endpoints answer `501 Not Implemented`.
 > Design: [`docs/phase1_requirements_and_design.md`](docs/phase1_requirements_and_design.md) and
 > [`docs/phase3_database_design.md`](docs/phase3_database_design.md) (the latter amends the former).
 
@@ -56,13 +56,16 @@ docker compose up --build        # database + app on http://localhost:8000
 ### Tests
 
 ```bash
-pytest                           # unit, API and structure tests; database tests are skipped
-
-# Also run the database tests against a real PostGIS (each test is rolled back). Use the
-# password from your .env; do not save it into files you keep.
-export AQUAMAP_TEST_DATABASE_URL="postgresql+psycopg://aquamap_user:<password>@localhost:5433/aquamap_db"
-pytest -m db
+pytest                           # quick: everything that needs no database (database tests are reported as unverified)
+pytest --test-db                 # complete: also the database, pipeline and browser tests, in a SEPARATE database
+pytest --test-db --report docs/test-report.md   # the same, and save the passed / failed / unverified report
 ```
+
+`--test-db` uses the database `<POSTGRES_DB>_test` (for example `aquamap_db_test`) on the server in `.env` and
+creates it if needed. Tests only ever run against a database whose name ends in `_test`; anything else stops the
+run before a single statement, so the development and production databases cannot be touched. The browser tests
+need Firefox and geckodriver (`pip install -r requirements-dev.txt` installs Selenium); without them they are
+reported as unverified. Details: [`docs/phase12_testing.md`](docs/phase12_testing.md).
 
 ### Database
 
@@ -154,6 +157,24 @@ Road, statistics and metadata routes need a session; `/admin` routes need an adm
 (`limit`, `offset`, `pagination.total`), geometry is GeoJSON in EPSG:4326, and every error is `{"detail": "..."}`.
 Endpoint reference: [`docs/phase9_api.md`](docs/phase9_api.md); machine-readable: [`docs/openapi.json`](docs/openapi.json).
 
+### Accounts (Phase 10)
+
+Registration, email verification by one-time code, sign-in, sign-out, password change and password reset. Passwords are
+stored as Argon2id hashes and codes as keyed hashes; nothing is stored in clear. Sessions are HTTP-only cookies that
+sign-out and password changes end on the server.
+
+Without a mail server, development writes each email (with its code) to the server log: look for
+`DEVELOPMENT EMAIL (not sent)` in the `uvicorn` output. For real delivery set `SMTP_HOST`, `SMTP_FROM` and, if needed,
+`SMTP_USER` and `SMTP_PASSWORD` in `.env`. In production without SMTP, email is off: accounts need no verification and
+reset by email is unavailable. Details: [`docs/phase10_authentication.md`](docs/phase10_authentication.md).
+
+### Dashboard (Phase 11)
+
+Open <http://localhost:8000>, create an account and sign in. The dashboard shows the road map coloured by
+vulnerability category with a legend, road search, filters for category, IVI range and road class, a road information
+panel, nearby roads and summary statistics. Everything shown comes from the API; the page holds no data of its own.
+Details: [`docs/phase11_frontend.md`](docs/phase11_frontend.md).
+
 ## Configuration
 
 All settings come from environment variables or `.env` (see `.env.example`). The app refuses to start
@@ -166,8 +187,11 @@ placeholder values are rejected and the interactive docs are disabled.
 | `SECRET_KEY` | Signs session tokens | required |
 | `POSTGRES_HOST` / `PORT` / `DB` / `USER` / `PASSWORD` | Database connection | `localhost` / `5433` / `aquamap_db` / `aquamap_user` / required |
 | `DB_POOL_SIZE`, `DB_MAX_OVERFLOW`, `DB_POOL_TIMEOUT`, `DB_POOL_RECYCLE`, `DB_CONNECT_TIMEOUT`, `DB_ECHO` | Connection pool and timeouts | `5`, `10`, `30`, `1800`, `3`, `false` |
-| `SESSION_COOKIE_NAME`, `SESSION_TTL_HOURS` | Session cookie | `aquamap_session`, `12` |
-| `ENABLE_2FA`, `OTP_*`, `SMTP_*` | Optional email second factor (not built: leave off) | off |
+| `SESSION_COOKIE_NAME`, `SESSION_TTL_HOURS` | Session cookie (always HttpOnly; Secure in production) | `aquamap_session`, `12` |
+| `EMAIL_BACKEND` | `auto`, `smtp`, `console` (development only) or `none` | `auto` |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`, `SMTP_STARTTLS` | Mail server for verification and reset codes | unset, `587`, `true` |
+| `OTP_TTL_MINUTES`, `OTP_MAX_ATTEMPTS`, `OTP_RESEND_SECONDS` | One-time code lifetime, wrong guesses allowed, wait between codes | `10`, `5`, `60` |
+| `ENABLE_2FA` | Second factor at sign-in (not built: leave off) | `false` |
 | `DATA_DIR` | Raw and processed geodata | `data` |
 
 ## Project layout

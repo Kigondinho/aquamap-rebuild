@@ -464,8 +464,12 @@ def test_analysis_metadata_describes_the_stored_results(user: TestClient, world:
     assert factors["river"]["upper_bounds"] == [50.0, 150.0, 300.0, 500.0] and factors["river"]["scores"] == [5, 4, 3, 2, 1]
     assert factors["surface"]["upper_bounds"] is None and body["surface_scores"]["*"] == 3.0
     assert [t["tier"] for t in body["tiers"]] == ["Low", "Medium", "High", "Severe"] and "higher" in body["boundary_rule"]
+    classes = body["coverage"].pop("road_classes")
     assert body["coverage"] == {"roads_total": 8, "roads_analysed": 7, "roads_with_index": 6, "roads_without_index": 1,
                                 "roads_not_analysed": 1, "flags": {"no_dem": 1, "no_slope": 1}}
+    assert classes[0] == {"highway_type": "residential", "segments": 4, "with_index": 3}
+    assert {c["highway_type"]: c["with_index"] for c in classes} == \
+        {"residential": 3, "primary": 1, "service": 1, "tertiary": 1, "footway": 0}
     assert (body["crs_storage"], body["crs_api"]) == ("EPSG:32737", "EPSG:4326")
     assert any("OpenStreetMap" in a for a in body["attribution"])
 

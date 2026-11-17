@@ -7,16 +7,21 @@
   <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-  <main class="centered">
-    <form class="panel" id="login-form" method="post" action="/api/v1/auth/login" novalidate>
-      <h1>Sign in to AquaMap</h1>
+  <main class="auth">
+    <form class="auth-card" id="login-form" novalidate>
+      <div class="brand">AquaMap</div>
+      <h1>Sign in</h1>
+      <p class="lead">Road flood vulnerability for Nairobi County.</p>
+      <div id="form-message" role="alert" aria-live="polite"></div>
       <div class="field"><label for="email">Email</label>
         <input id="email" name="email" type="email" autocomplete="username" required></div>
       <div class="field"><label for="password">Password</label>
         <input id="password" name="password" type="password" autocomplete="current-password" required></div>
-      <p class="error" id="form-error" role="alert"></p>
       <button type="submit">Sign in</button>
-      <p class="note">No account? <a href="/register">Create one</a>.</p>
+      <div class="auth-links">
+        <span>No account? <a href="/register">Create one</a></span>
+        <span><a href="/reset-password">Forgot your password?</a></span>
+      </div>
     </form>
   </main>
   <script type="module" src="/static/js/auth.js"></script>

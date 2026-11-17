@@ -13,10 +13,12 @@ class FieldError(BaseModel):
 
 
 class ErrorResponse(BaseModel):
-    """Body of every error response. ``errors`` is present only for validation failures (422)."""
+    """Body of every error response. ``errors`` is present only for validation failures (422); ``code``
+    only where a client needs to tell reasons apart (for example ``email_not_verified``)."""
 
     detail: str
     errors: list[FieldError] | None = None
+    code: str | None = None
 
 
 class MessageResponse(BaseModel):
@@ -36,7 +38,7 @@ class Pagination(BaseModel):
 
 def error_responses(*codes: int) -> dict[int | str, dict[str, Any]]:
     """OpenAPI ``responses`` entries for the given status codes, all using ``ErrorResponse``."""
-    text = {400: "Bad request", 401: "Not signed in, or the session expired", 403: "Signed in, but not allowed",
+    text = {400: "The request could not be completed (for example a wrong or expired code)", 401: "Not signed in, or the session expired", 403: "Signed in, but not allowed",
             404: "Not found", 409: "Conflict with existing data", 413: "Result too large",
             422: "A parameter or the body is invalid", 429: "Too many attempts", 501: "Not implemented",
             503: "Database unavailable"}

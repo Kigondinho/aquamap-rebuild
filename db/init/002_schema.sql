@@ -190,3 +190,20 @@ ALTER TABLE road_vulnerability ADD CONSTRAINT vuln_ivi_in_range CHECK (
 );
 ALTER TABLE road_vulnerability DROP CONSTRAINT IF EXISTS vuln_samples_nonneg;
 ALTER TABLE road_vulnerability ADD CONSTRAINT vuln_samples_nonneg CHECK (terrain_samples IS NULL OR terrain_samples >= 0);
+
+-- ---------------------------------------------------------------------------
+-- Phase 10 upgrade (idempotent): email verification, revocable sessions, purpose of one-time codes.
+--   email_verified       set when the user proves ownership of the mailbox (or by the create-user command)
+--   session_version      every session token carries the version it was issued under; raising it
+--                        (sign-out, password change or reset) ends all earlier sessions at once
+--   password_changed_at  for the record; never the password itself
+--   auth_otps.purpose    what a code is for; a code for one purpose is useless for the other
+-- Codes are stored only as keyed hashes (otp_hash), never in clear.
+-- ---------------------------------------------------------------------------
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified      BOOLEAN     NOT NULL DEFAULT FALSE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS session_version     INTEGER     NOT NULL DEFAULT 0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS password_changed_at TIMESTAMPTZ;
+
+ALTER TABLE auth_otps ADD COLUMN IF NOT EXISTS purpose VARCHAR(16) NOT NULL DEFAULT 'verify_email';
+ALTER TABLE auth_otps DROP CONSTRAINT IF EXISTS auth_otps_purpose_valid;
+ALTER TABLE auth_otps ADD CONSTRAINT auth_otps_purpose_valid CHECK (purpose IN ('verify_email', 'reset_password'));
