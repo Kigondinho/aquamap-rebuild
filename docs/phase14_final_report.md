@@ -188,9 +188,9 @@ untouched afterwards.
 
 ### 6.2 Continuous integration
 
-GitHub Actions ran both jobs successfully on commit `855a933` (the code that was cloned for this verification): the
-complete suite with `--require-all`, and the Docker start-up from a clean checkout. The Phase 14 changes are not yet
-pushed, so CI has not run on them.
+GitHub Actions ran both jobs successfully on commit `855a933` (the code that was cloned for this verification) and
+again on `178b840` (with the Phase 14 fixes): the complete suite with `--require-all`, and the Docker start-up from a
+clean checkout.
 
 ### 6.3 End-to-end checker
 
