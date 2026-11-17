@@ -8,7 +8,11 @@ import { clear, debounce, el, fmt } from "./ui.js";
 export const NAIROBI_CENTER = [-1.286, 36.82];
 export const DEFAULT_ZOOM = 12;
 const PAGE_LIMIT = 5000;     // the API's largest page
-const MAX_FEATURES = 15000;  // pages are added until the view is complete or this many roads are drawn
+// Every scored road in view is drawn; the whole county fits well under the cap. Drawing only the highest-scoring
+// part of a city-wide view made the map look almost entirely High. The cap only guards against a far larger
+// dataset, and a notice says when it applies.
+const MAX_FEATURES = 60000;
+const PARALLEL_PAGES = 4;    // later pages are fetched this many at a time, and still drawn in score order
 
 /** Thinner lines when zoomed out, so a dense city view stays readable; dashes only when lines are long enough to show them. */
 function styleForZoom(tier, zoom) {
@@ -93,20 +97,37 @@ export class RoadLayer {
     this.status("loading", "Loading roads…");
     const query = { bbox: bboxParam(this.map), zoom: this.map.getZoom(), limit: PAGE_LIMIT, ...filters };
     try {
-      // The first page (the highest scores) is drawn at once; further pages are added underneath it.
-      let data = await apiFetch("/roads", { params: query, signal: controller.signal });
+      // The first page (the highest scores) is drawn at once. The remaining pages are requested a few at a time
+      // and drawn strictly in order, each underneath the previous one, so higher scores always stay on top.
+      const first = await apiFetch("/roads", { params: query, signal: controller.signal });
       this.layer.clearLayers();
-      this.drawn = { total: 0, matching: data.pagination.total, byCategory: {}, ids: [] };
-      let drawn = this.draw(data.features, query.zoom);
-      while (data.pagination.has_more && drawn < MAX_FEATURES) {
-        this.status("loading", `Loading roads… ${fmt.int(drawn)} of ${fmt.int(data.pagination.total)}`);
-        data = await apiFetch("/roads", { params: { ...query, offset: data.pagination.next_offset }, signal: controller.signal });
-        drawn += this.draw(data.features, query.zoom, { underneath: true });
+      const total = first.pagination.total;
+      this.drawn = { total: 0, matching: total, byCategory: {}, ids: [] };
+      let drawn = this.draw(first.features, query.zoom);
+      const offsets = [];
+      for (let offset = first.pagination.next_offset ?? total; offset < Math.min(total, MAX_FEATURES); offset += PAGE_LIMIT) {
+        offsets.push(offset);
       }
-      this.report(drawn, data.pagination.total);
+      const pending = new Map();
+      const request = (offset) => {
+        const page = apiFetch("/roads", { params: { ...query, offset }, signal: controller.signal });
+        page.catch(() => {});   // handled where it is awaited; this only keeps a cancelled page from logging an error
+        return page;
+      };
+      offsets.slice(0, PARALLEL_PAGES).forEach((offset) => pending.set(offset, request(offset)));
+      for (let i = 0; i < offsets.length; i += 1) {
+        this.status("loading", `Loading roads… ${fmt.int(drawn)} of ${fmt.int(total)}`);
+        const page = await pending.get(offsets[i]);
+        pending.delete(offsets[i]);
+        const next = offsets[i + PARALLEL_PAGES];
+        if (next !== undefined) pending.set(next, request(next));
+        drawn += this.draw(page.features, query.zoom, { underneath: true });
+      }
+      this.report(drawn, total);
       this.loading = false;
     } catch (error) {
       if (isAbort(error)) return;   // a newer reload has taken over and owns the loading flag
+      controller.abort();           // stop the pages still on their way
       this.loading = false;
       this.drawn = { total: 0, matching: 0, byCategory: {}, ids: [] };
       this.layer.clearLayers();

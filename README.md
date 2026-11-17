@@ -8,7 +8,8 @@ forecast.
 **Stack:** Python 3.12, FastAPI, PostgreSQL/PostGIS, GeoPandas, Rasterio, NumPy, plain HTML/CSS/JS, Leaflet.
 
 > **Status:** data pipeline (Phases 4–7), road queries and REST API (8–9), accounts (10), map dashboard (11),
-> automated tests (12), Docker and CI (13). Not built yet: GeoJSON export, a second factor at sign-in, the admin
+> automated tests (12), Docker and CI (13), end-to-end verification (14). **Final report:**
+> [`docs/phase14_final_report.md`](docs/phase14_final_report.md). Not built yet: GeoJSON export, a second factor at sign-in, the admin
 > page and saving scoring configurations from the browser (those endpoints answer `501 Not Implemented`).
 > Design: [`docs/phase1_requirements_and_design.md`](docs/phase1_requirements_and_design.md) and
 > [`docs/phase3_database_design.md`](docs/phase3_database_design.md) (the latter amends the former).
@@ -75,6 +76,8 @@ creates it if needed. Tests only ever run against a database whose name ends in 
 run before a single statement, so the development and production databases cannot be touched. The browser tests
 need Firefox and geckodriver (`pip install -r requirements-dev.txt` installs Selenium); without them they are
 reported as unverified. Details: [`docs/phase12_testing.md`](docs/phase12_testing.md).
+
+To check a running installation end to end (database, API and browser must agree), see `scripts/verify_system.py`.
 
 Write the report option as one word, `--report=FILE`. **CI** (GitHub Actions, `.github/workflows/ci.yml`) runs
 the complete suite with `--require-all`, so a skipped test fails the run, and separately builds the images and

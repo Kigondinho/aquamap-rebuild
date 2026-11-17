@@ -44,6 +44,12 @@ def optional_user(db: DbSession,
 OptionalUser = Annotated[CurrentUser | None, Depends(optional_user)]
 
 
+@router.get("/favicon.ico")
+def favicon() -> FileResponse:
+    """Browsers and some tools ask for /favicon.ico whatever the page says; answer instead of logging a 404."""
+    return FileResponse(STATIC_DIR / "favicon.svg", media_type="image/svg+xml", headers={"Cache-Control": "public, max-age=86400"})
+
+
 @router.get("/")
 def dashboard(user: OptionalUser) -> Response:
     return _page("index.html") if user else RedirectResponse("/login", status_code=303)

@@ -46,10 +46,10 @@ threshold appears in the JavaScript.
 
 ## Behaviour worth knowing
 
-- **How many roads are drawn.** The map asks for the roads in view, highest score first, 5,000 at a time, up to 15,000.
-  When more match, a notice says so ("Showing the 15,000 highest-scoring of 41,318 roads in view") and asks to zoom in
-  or narrow the filters. From about zoom 14 the whole view fits. The first page appears at once; later pages are added
-  underneath it.
+- **How many roads are drawn.** Every scored road in view, in pages of 5,000: the first page (highest scores) appears
+  at once, the others are fetched four at a time and drawn underneath in score order. The whole county takes about
+  3.5 s. (Until Phase 14 only the 15,000 highest-scoring roads were drawn, which made the city-wide view look almost
+  entirely High; see `phase14_final_report.md`.) A notice appears only if a view ever holds more than 60,000 roads.
 - **Only scored roads are drawn.** Footways, paths and similar are not analysed and are not on the map. They can still
   be found by name; their panel says "Not scored" and why.
 - **Filters.** Category, IVI range and road class apply to the map and to nearby roads. The statistics follow the road
@@ -123,7 +123,6 @@ every feature calls its endpoint, no HTML insertion.
 - There are no automated browser tests; interaction was checked by hand as listed.
 - The base map tiles come from openstreetmap.org and need internet access; without it the roads are drawn on a plain
   background.
-- A zoomed-out view shows at most the 15,000 highest-scoring roads in view.
 - The account pages cover sign-in, registration, confirmation and reset. Changing a password while signed in has an
   API endpoint but no page yet. The admin page is still a placeholder.
 - GeoJSON export has no button because the endpoint is not built.

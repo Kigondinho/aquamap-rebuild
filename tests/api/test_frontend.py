@@ -39,6 +39,17 @@ def test_assets_are_served(client: TestClient, name: str) -> None:
     assert client.get(f"/static/js/{name}").status_code == 200
 
 
+@pytest.mark.parametrize("page", PAGES + ["admin.html", "verify-2fa.html"])
+def test_every_page_declares_the_icon(page: str) -> None:
+    assert '<link rel="icon" href="/static/favicon.svg" type="image/svg+xml">' in (STATIC / page).read_text(encoding="utf-8")
+
+
+def test_favicon_is_served_where_browsers_look_for_it(client: TestClient) -> None:
+    for url in ("/favicon.ico", "/static/favicon.svg"):
+        response = client.get(url)
+        assert response.status_code == 200 and response.headers["content-type"].startswith("image/svg+xml"), url
+
+
 @pytest.mark.parametrize("page", PAGES)
 def test_pages_reference_only_files_that_exist(page: str) -> None:
     html = (STATIC / page).read_text(encoding="utf-8")
